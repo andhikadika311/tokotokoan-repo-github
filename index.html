@@ -8,7 +8,6 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="style.css">
@@ -22,20 +21,22 @@
 
 <div id="loginPage" class="auth-page">
 
-    <div class="auth-box">
+    <div class="auth-card">
 
-        <div class="brand-auth">
-            <div class="brand-icon">T</div>
+        <div class="auth-logo">
+            <div class="logo-icon">T</div>
             <div>
                 <h1>TOKOTOKOAND</h1>
-                <p>Sistem Manajemen Toko</p>
+                <p>Manajemen Toko</p>
             </div>
         </div>
 
-        <h2>Selamat Datang 👋</h2>
-        <p class="auth-subtitle">Silakan masuk ke akun Anda</p>
+        <div class="auth-title">
+            <h2>Selamat Datang 👋</h2>
+            <p>Silakan login untuk melanjutkan.</p>
+        </div>
 
-        <form onsubmit="login(event)">
+        <form id="loginForm">
 
             <div class="form-group">
                 <label>Username</label>
@@ -63,13 +64,13 @@
                         class="password-toggle"
                         onclick="togglePassword('loginPassword', this)"
                     >
-                        👁
+                        👁️
                     </button>
                 </div>
             </div>
 
             <button type="submit" class="btn btn-primary btn-full">
-                Login
+                🔐 Login
             </button>
 
         </form>
@@ -86,11 +87,13 @@
         </button>
 
         <div class="login-info">
-            <small>Default Admin</small>
-            <p>Username: <b>admin</b> | Password: <b>admin123</b></p>
+            <strong>Admin awal:</strong><br>
+            Username: <b>admin</b><br>
+            Password: <b>admin123</b>
         </div>
 
     </div>
+
 </div>
 
 
@@ -100,23 +103,23 @@
 
 <div id="registerPage" class="auth-page hidden">
 
-    <div class="auth-box">
+    <div class="auth-card">
 
-        <div class="brand-auth">
-            <div class="brand-icon">T</div>
+        <div class="auth-logo">
+            <div class="logo-icon">T</div>
+
             <div>
                 <h1>TOKOTOKOAND</h1>
-                <p>Buat Akun Baru</p>
+                <p>Daftar Akun Baru</p>
             </div>
         </div>
 
-        <h2>Daftar Akun</h2>
+        <div class="auth-title">
+            <h2>Buat Akun</h2>
+            <p>Akun baru otomatis menjadi Member.</p>
+        </div>
 
-        <p class="auth-subtitle">
-            Akun baru otomatis menjadi Member
-        </p>
-
-        <form onsubmit="registerAccount(event)">
+        <form id="registerForm">
 
             <div class="form-group">
                 <label>Nama Lengkap</label>
@@ -140,38 +143,70 @@
 
             <div class="form-group">
                 <label>Password</label>
-                <input
-                    type="password"
-                    id="registerPassword"
-                    placeholder="Minimal 6 karakter"
-                    required
-                >
+
+                <div class="password-wrapper">
+                    <input
+                        type="password"
+                        id="registerPassword"
+                        placeholder="Minimal 6 karakter"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        class="password-toggle"
+                        onclick="togglePassword('registerPassword', this)"
+                    >
+                        👁️
+                    </button>
+                </div>
             </div>
 
             <div class="form-group">
                 <label>Konfirmasi Password</label>
-                <input
-                    type="password"
-                    id="registerConfirmPassword"
-                    placeholder="Ulangi password"
-                    required
-                >
+
+                <div class="password-wrapper">
+                    <input
+                        type="password"
+                        id="registerConfirm"
+                        placeholder="Ulangi password"
+                        required
+                    >
+
+                    <button
+                        type="button"
+                        class="password-toggle"
+                        onclick="togglePassword('registerConfirm', this)"
+                    >
+                        👁️
+                    </button>
+                </div>
             </div>
 
-            <button class="btn btn-primary btn-full">
-                Buat Akun
+            <div class="register-note">
+                👤 Semua akun baru otomatis memiliki role
+                <strong>Member</strong>.
+                Perubahan menjadi Admin hanya dapat dilakukan oleh Admin melalui menu Kelola Akun.
+            </div>
+
+            <button
+                type="submit"
+                class="btn btn-primary btn-full"
+            >
+                📝 Daftar
             </button>
 
         </form>
 
         <button
-            class="btn btn-outline btn-full register-back"
+            class="btn btn-outline btn-full"
             onclick="showLogin()"
         >
             ← Kembali ke Login
         </button>
 
     </div>
+
 </div>
 
 
@@ -183,18 +218,19 @@
 
     <!-- SIDEBAR -->
 
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
 
-        <div class="sidebar-brand">
+        <div class="sidebar-logo">
 
-            <div class="brand-icon">T</div>
+            <div class="logo-icon">T</div>
 
             <div>
                 <h2>TOKOTOKOAND</h2>
-                <span>Store Management</span>
+                <small>Store Management</small>
             </div>
 
         </div>
+
 
         <div class="sidebar-user">
 
@@ -202,14 +238,9 @@
                 U
             </div>
 
-            <div class="user-info">
-                <strong id="sidebarUserName">
-                    User
-                </strong>
-
-                <span id="sidebarUserRole">
-                    Member
-                </span>
+            <div>
+                <strong id="sidebarUserName">User</strong>
+                <span id="sidebarUserRole">Member</span>
             </div>
 
         </div>
@@ -220,7 +251,6 @@
             <button
                 class="nav-item active"
                 data-page="dashboard"
-                onclick="navigate('dashboard')"
             >
                 <span>📊</span>
                 Dashboard
@@ -229,7 +259,6 @@
             <button
                 class="nav-item admin-only"
                 data-page="barang"
-                onclick="navigate('barang')"
             >
                 <span>📦</span>
                 Data Barang
@@ -238,16 +267,14 @@
             <button
                 class="nav-item admin-only"
                 data-page="stok"
-                onclick="navigate('stok')"
             >
-                <span>📥</span>
+                <span>🚚</span>
                 Barang Masuk
             </button>
 
             <button
                 class="nav-item"
                 data-page="penjualan"
-                onclick="navigate('penjualan')"
             >
                 <span>🛒</span>
                 Penjualan
@@ -256,16 +283,14 @@
             <button
                 class="nav-item"
                 data-page="riwayat"
-                onclick="navigate('riwayat')"
             >
-                <span>📜</span>
+                <span>📋</span>
                 Riwayat
             </button>
 
             <button
                 class="nav-item admin-only"
                 data-page="member"
-                onclick="navigate('member')"
             >
                 <span>👥</span>
                 Data Member
@@ -274,7 +299,6 @@
             <button
                 class="nav-item admin-only"
                 data-page="akun"
-                onclick="navigate('akun')"
             >
                 <span>👤</span>
                 Kelola Akun
@@ -288,9 +312,9 @@
             <button
                 class="theme-button"
                 onclick="toggleTheme()"
-                id="themeButton"
             >
-                🌙 Mode Gelap
+                <span id="themeIcon">🌙</span>
+                <span id="themeText">Mode Gelap</span>
             </button>
 
             <button
@@ -305,7 +329,7 @@
     </aside>
 
 
-    <!-- MAIN -->
+    <!-- MAIN CONTENT -->
 
     <main class="main-content">
 
@@ -313,27 +337,31 @@
 
         <header class="topbar">
 
+            <button
+                class="mobile-menu"
+                onclick="toggleSidebar()"
+            >
+                ☰
+            </button>
+
             <div>
-
-                <button
-                    class="mobile-menu"
-                    onclick="toggleSidebar()"
-                >
-                    ☰
-                </button>
-
-                <h1 id="pageTitle">
-                    Dashboard
-                </h1>
-
+                <h1 id="pageTitle">Dashboard</h1>
                 <p id="pageSubtitle">
-                    Ringkasan aktivitas TOKOTOKOAND
+                    Ringkasan aktivitas toko
                 </p>
-
             </div>
 
             <div class="topbar-user">
-                <span id="topbarDate"></span>
+
+                <div class="topbar-avatar" id="topbarAvatar">
+                    U
+                </div>
+
+                <div>
+                    <strong id="topbarName">User</strong>
+                    <small id="topbarRole">Member</small>
+                </div>
+
             </div>
 
         </header>
@@ -341,9 +369,24 @@
 
         <!-- =================================================
              DASHBOARD
-        ================================================= -->
+        ================================================== -->
 
-        <section id="page-dashboard" class="page active">
+        <section id="page-dashboard" class="page active-page">
+
+            <div class="welcome-box">
+
+                <div>
+                    <h2>Halo, <span id="welcomeName">User</span>! 👋</h2>
+
+                    <p>
+                        Selamat datang kembali di sistem TOKOTOKOAND.
+                    </p>
+                </div>
+
+                <div class="welcome-date" id="currentDate"></div>
+
+            </div>
+
 
             <div class="stats-grid">
 
@@ -355,21 +398,7 @@
 
                     <div>
                         <span>Total Barang</span>
-                        <h3 id="statBarang">0</h3>
-                    </div>
-
-                </div>
-
-
-                <div class="stat-card">
-
-                    <div class="stat-icon green">
-                        📊
-                    </div>
-
-                    <div>
-                        <span>Total Stok</span>
-                        <h3 id="statStok">0</h3>
+                        <strong id="totalBarang">0</strong>
                     </div>
 
                 </div>
@@ -378,12 +407,26 @@
                 <div class="stat-card">
 
                     <div class="stat-icon purple">
-                        👥
+                        📊
                     </div>
 
                     <div>
-                        <span>Total Member</span>
-                        <h3 id="statMember">0</h3>
+                        <span>Total Stok</span>
+                        <strong id="totalStok">0</strong>
+                    </div>
+
+                </div>
+
+
+                <div class="stat-card">
+
+                    <div class="stat-icon green">
+                        💰
+                    </div>
+
+                    <div>
+                        <span>Penjualan Hari Ini</span>
+                        <strong id="penjualanHariIni">Rp0</strong>
                     </div>
 
                 </div>
@@ -392,12 +435,12 @@
                 <div class="stat-card">
 
                     <div class="stat-icon orange">
-                        💰
+                        ⚠️
                     </div>
 
                     <div>
-                        <span>Penjualan Hari Ini</span>
-                        <h3 id="statPenjualan">Rp0</h3>
+                        <span>Stok Menipis</span>
+                        <strong id="stokMenipis">0</strong>
                     </div>
 
                 </div>
@@ -407,17 +450,13 @@
 
             <div class="dashboard-grid">
 
-                <!-- LOW STOCK -->
-
                 <div class="card">
 
                     <div class="card-header">
-
                         <div>
-                            <h2>⚠️ Stok Menipis</h2>
-                            <p>Barang dengan stok ≤ 10</p>
+                            <h3>Stok Menipis</h3>
+                            <p>Barang yang perlu diperhatikan</p>
                         </div>
-
                     </div>
 
                     <div class="table-wrapper">
@@ -432,7 +471,7 @@
                                 </tr>
                             </thead>
 
-                            <tbody id="lowStockTable"></tbody>
+                            <tbody id="lowStockBody"></tbody>
 
                         </table>
 
@@ -441,14 +480,12 @@
                 </div>
 
 
-                <!-- RECENT TRANSACTION -->
-
                 <div class="card">
 
                     <div class="card-header">
 
                         <div>
-                            <h2>🧾 Transaksi Terbaru</h2>
+                            <h3>Transaksi Terbaru</h3>
                             <p>5 transaksi terakhir</p>
                         </div>
 
@@ -461,13 +498,13 @@
                             <thead>
                                 <tr>
                                     <th>ID</th>
-                                    <th>Member</th>
+                                    <th>Pembeli</th>
                                     <th>Total</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
 
-                            <tbody id="recentTransactionTable"></tbody>
+                            <tbody id="recentTransactionBody"></tbody>
 
                         </table>
 
@@ -482,20 +519,15 @@
 
         <!-- =================================================
              DATA BARANG
-        ================================================= -->
+        ================================================== -->
 
         <section id="page-barang" class="page">
 
-            <div class="page-actions">
+            <div class="page-header">
 
-                <div class="search-box">
-                    🔍
-                    <input
-                        type="text"
-                        id="searchBarang"
-                        placeholder="Cari barang..."
-                        oninput="renderBarang()"
-                    >
+                <div>
+                    <h2>Data Barang</h2>
+                    <p>Kelola seluruh barang toko.</p>
                 </div>
 
                 <button
@@ -509,6 +541,21 @@
 
 
             <div class="card">
+
+                <div class="toolbar">
+
+                    <div class="search-box">
+                        🔎
+                        <input
+                            type="text"
+                            id="searchBarang"
+                            placeholder="Cari barang..."
+                            oninput="renderBarang()"
+                        >
+                    </div>
+
+                </div>
+
 
                 <div class="table-wrapper">
 
@@ -529,7 +576,7 @@
                             </tr>
                         </thead>
 
-                        <tbody id="barangTable"></tbody>
+                        <tbody id="barangTableBody"></tbody>
 
                     </table>
 
@@ -542,20 +589,15 @@
 
         <!-- =================================================
              BARANG MASUK
-        ================================================= -->
+        ================================================== -->
 
         <section id="page-stok" class="page">
 
-            <div class="page-actions">
+            <div class="page-header">
 
                 <div>
-                    <h2 class="section-title">
-                        Barang Masuk
-                    </h2>
-
-                    <p class="section-description">
-                        Tambahkan stok barang yang masuk.
-                    </p>
+                    <h2>Barang Masuk</h2>
+                    <p>Tambahkan stok barang yang masuk.</p>
                 </div>
 
                 <button
@@ -576,15 +618,14 @@
 
                         <thead>
                             <tr>
-                                <th>Gambar</th>
                                 <th>ID Barang</th>
                                 <th>Nama Barang</th>
-                                <th>Stok Saat Ini</th>
+                                <th>Stok Sekarang</th>
                                 <th>Satuan</th>
                             </tr>
                         </thead>
 
-                        <tbody id="stokTable"></tbody>
+                        <tbody id="stokTableBody"></tbody>
 
                     </table>
 
@@ -597,145 +638,149 @@
 
         <!-- =================================================
              PENJUALAN
-        ================================================= -->
+        ================================================== -->
 
         <section id="page-penjualan" class="page">
 
+            <div class="page-header">
+
+                <div>
+                    <h2>Penjualan</h2>
+                    <p>Buat transaksi penjualan baru.</p>
+                </div>
+
+            </div>
+
+
             <div class="sales-layout">
 
-                <!-- PRODUCT -->
+                <!-- FORM PENJUALAN -->
 
                 <div class="card">
 
                     <div class="card-header">
+                        <div>
+                            <h3>Tambah Barang</h3>
+                            <p>Pilih barang yang ingin dijual.</p>
+                        </div>
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>Pembeli / Member</label>
+
+                        <select id="saleMember">
+                            <option value="UMUM">
+                                Umum
+                            </option>
+                        </select>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>Barang</label>
+
+                        <select
+                            id="saleBarang"
+                            onchange="updateSalePrice()"
+                        >
+                            <option value="">
+                                -- Pilih Barang --
+                            </option>
+                        </select>
+
+                    </div>
+
+
+                    <div
+                        id="saleProductPreview"
+                        class="sale-product-preview hidden"
+                    >
+                        <img
+                            id="saleProductImage"
+                            src=""
+                            alt="Produk"
+                        >
 
                         <div>
-                            <h2>🛒 Pilih Barang</h2>
-                            <p>Tambahkan barang ke keranjang</p>
+                            <strong id="saleProductName"></strong>
+                            <span id="saleProductPrice"></span>
                         </div>
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label>Jumlah</label>
+
+                        <input
+                            type="number"
+                            id="saleQty"
+                            min="1"
+                            value="1"
+                        >
 
                     </div>
 
 
-                    <div class="sale-form">
-
-                        <div class="form-group">
-
-                            <label>Member</label>
-
-                            <select id="saleMember">
-                                <option value="">
-                                    Umum
-                                </option>
-                            </select>
-
-                        </div>
-
-
-                        <div class="form-group">
-
-                            <label>Barang</label>
-
-                            <select
-                                id="saleBarang"
-                                onchange="updateSalePrice()"
-                            >
-                            </select>
-
-                        </div>
-
-
-                        <div id="selectedProduct" class="selected-product hidden">
-
-                            <img
-                                id="selectedProductImage"
-                                src=""
-                                alt="Produk"
-                            >
-
-                            <div>
-
-                                <strong id="selectedProductName">
-                                    -
-                                </strong>
-
-                                <span id="selectedProductPrice">
-                                    Rp0
-                                </span>
-
-                                <small id="selectedProductStock">
-                                    Stok: 0
-                                </small>
-
-                            </div>
-
-                        </div>
-
-
-                        <div class="form-row">
-
-                            <div class="form-group">
-
-                                <label>Jumlah</label>
-
-                                <input
-                                    type="number"
-                                    id="saleQty"
-                                    min="1"
-                                    value="1"
-                                >
-
-                            </div>
-
-                            <div class="form-group">
-
-                                <label>&nbsp;</label>
-
-                                <button
-                                    class="btn btn-primary btn-full"
-                                    onclick="addToCart()"
-                                >
-                                    + Keranjang
-                                </button>
-
-                            </div>
-
-                        </div>
-
-                    </div>
+                    <button
+                        class="btn btn-primary btn-full"
+                        onclick="addToCart()"
+                    >
+                        + Tambahkan ke Keranjang
+                    </button>
 
                 </div>
 
 
-                <!-- CART -->
+                <!-- KERANJANG -->
 
                 <div class="card">
 
                     <div class="card-header">
 
                         <div>
-                            <h2>🛍️ Keranjang</h2>
-                            <p id="cartCount">
-                                0 item
-                            </p>
+                            <h3>Keranjang</h3>
+                            <p>Daftar barang yang dibeli.</p>
                         </div>
+
+                        <span
+                            class="cart-count"
+                            id="cartCount"
+                        >
+                            0 item
+                        </span>
 
                     </div>
 
 
-                    <div id="cartContainer" class="cart-container">
+                    <div class="table-wrapper">
 
-                        <div class="empty-state">
-                            🛒
-                            <p>Keranjang masih kosong</p>
-                        </div>
+                        <table>
+
+                            <thead>
+                                <tr>
+                                    <th>Barang</th>
+                                    <th>Harga</th>
+                                    <th>Qty</th>
+                                    <th>Subtotal</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="cartBody"></tbody>
+
+                        </table>
 
                     </div>
 
 
-                    <div class="checkout-box">
+                    <div class="cart-footer">
 
-                        <div class="checkout-total">
+                        <div class="cart-total">
 
                             <span>Total</span>
 
@@ -746,53 +791,13 @@
                         </div>
 
 
-                        <div class="form-group">
+                        <div class="payment-info">
 
-                            <label>Uang Dibayar</label>
+                            <h4>Status Pembayaran</h4>
 
-                            <input
-                                type="number"
-                                id="paymentAmount"
-                                min="0"
-                                placeholder="Masukkan jumlah uang"
-                                oninput="calculateChange()"
-                            >
+                            <div class="payment-pending">
 
-                        </div>
-
-
-                        <div class="change-box">
-
-                            <span>Kembalian</span>
-
-                            <strong id="changeAmount">
-                                Rp0
-                            </strong>
-
-                        </div>
-
-
-                        <div class="payment-status">
-
-                            <span>Status Pembayaran</span>
-
-                            <div class="payment-buttons">
-
-                                <button
-                                    id="paidButton"
-                                    class="payment-btn paid"
-                                    onclick="setPaymentStatus(true)"
-                                >
-                                    ✅ Sudah Bayar
-                                </button>
-
-                                <button
-                                    id="unpaidButton"
-                                    class="payment-btn unpaid"
-                                    onclick="setPaymentStatus(false)"
-                                >
-                                    ❌ Belum Bayar
-                                </button>
+                                🔒 Status pembayaran akan dikonfirmasi oleh Admin setelah checkout.
 
                             </div>
 
@@ -800,10 +805,10 @@
 
 
                         <button
-                            class="btn btn-primary btn-full checkout-button"
+                            class="btn btn-success btn-full"
                             onclick="checkout()"
                         >
-                            💳 Checkout
+                            🛒 Checkout
                         </button>
 
                     </div>
@@ -817,31 +822,16 @@
 
         <!-- =================================================
              RIWAYAT
-        ================================================= -->
+        ================================================== -->
 
         <section id="page-riwayat" class="page">
 
-            <div class="page-actions">
+            <div class="page-header">
 
-                <div class="search-box">
-                    🔍
-                    <input
-                        type="text"
-                        id="searchRiwayat"
-                        placeholder="Cari transaksi..."
-                        oninput="renderRiwayat()"
-                    >
+                <div>
+                    <h2>Riwayat Transaksi</h2>
+                    <p>Daftar transaksi penjualan.</p>
                 </div>
-
-                <select
-                    id="filterPembayaran"
-                    class="filter-select"
-                    onchange="renderRiwayat()"
-                >
-                    <option value="semua">Semua Pembayaran</option>
-                    <option value="lunas">Sudah Bayar</option>
-                    <option value="belum">Belum Bayar</option>
-                </select>
 
             </div>
 
@@ -854,17 +844,18 @@
 
                         <thead>
                             <tr>
-                                <th>ID</th>
+                                <th>ID Transaksi</th>
                                 <th>Tanggal</th>
-                                <th>Member</th>
-                                <th>Item</th>
+                                <th>Pembeli</th>
+                                <th>Jumlah Item</th>
                                 <th>Total</th>
+                                <th>Kasir</th>
                                 <th>Pembayaran</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
 
-                        <tbody id="riwayatTable"></tbody>
+                        <tbody id="riwayatTableBody"></tbody>
 
                     </table>
 
@@ -877,20 +868,34 @@
 
         <!-- =================================================
              DATA MEMBER
-        ================================================= -->
+        ================================================== -->
 
         <section id="page-member" class="page">
 
-            <div class="page-actions">
+            <div class="page-header">
 
-                <div class="search-box">
-                    🔍
-                    <input
-                        type="text"
-                        id="searchMember"
-                        placeholder="Cari member..."
-                        oninput="renderMember()"
-                    >
+                <div>
+                    <h2>Data Member</h2>
+                    <p>
+                        Data member otomatis berasal dari akun yang terdaftar.
+                    </p>
+                </div>
+
+            </div>
+
+
+            <div class="member-stat-card">
+
+                <div class="member-stat-icon">
+                    👥
+                </div>
+
+                <div>
+                    <span>Total Member</span>
+
+                    <strong id="totalMember">
+                        0
+                    </strong>
                 </div>
 
             </div>
@@ -903,16 +908,19 @@
                     <table>
 
                         <thead>
+
                             <tr>
                                 <th>ID Member</th>
                                 <th>Nama</th>
                                 <th>Username</th>
                                 <th>Role</th>
+                                <th>Password</th>
                                 <th>Tanggal Daftar</th>
                             </tr>
+
                         </thead>
 
-                        <tbody id="memberTable"></tbody>
+                        <tbody id="memberTableBody"></tbody>
 
                     </table>
 
@@ -925,19 +933,16 @@
 
         <!-- =================================================
              KELOLA AKUN
-        ================================================= -->
+        ================================================== -->
 
-        <section id="page-akun" class="page">
+        <section id="page-akun" class="page admin-page">
 
-            <div class="page-actions">
+            <div class="page-header">
 
                 <div>
-                    <h2 class="section-title">
-                        Kelola Akun
-                    </h2>
-
-                    <p class="section-description">
-                        Atur akun dan role pengguna.
+                    <h2>Kelola Akun</h2>
+                    <p>
+                        Kelola akun dan role pengguna.
                     </p>
                 </div>
 
@@ -953,12 +958,13 @@
 
             <div class="info-box">
 
-                🔐 <strong>Aturan Role:</strong>
+                👑 <strong>Informasi Role:</strong>
 
-                Akun baru otomatis menjadi
+                Semua akun baru otomatis menjadi
                 <strong>Member</strong>.
-                Hanya Admin yang dapat mengubah
-                Member menjadi Admin.
+
+                Hanya Admin yang dapat mengubah role
+                Member menjadi Admin melalui halaman ini.
 
             </div>
 
@@ -970,6 +976,7 @@
                     <table>
 
                         <thead>
+
                             <tr>
                                 <th>ID</th>
                                 <th>Nama</th>
@@ -978,9 +985,10 @@
                                 <th>Tanggal Daftar</th>
                                 <th>Aksi</th>
                             </tr>
+
                         </thead>
 
-                        <tbody id="akunTable"></tbody>
+                        <tbody id="akunTableBody"></tbody>
 
                     </table>
 
@@ -999,19 +1007,22 @@
      MODAL BARANG
 ===================================================== -->
 
-<div id="barangModal" class="modal">
+<div
+    id="barangModal"
+    class="modal hidden"
+>
 
-    <div class="modal-content">
+    <div class="modal-card">
 
         <div class="modal-header">
 
             <div>
-                <h2 id="barangModalTitle">
+                <h3 id="barangModalTitle">
                     Tambah Barang
-                </h2>
+                </h3>
 
                 <p>
-                    Masukkan informasi barang
+                    Masukkan informasi barang.
                 </p>
             </div>
 
@@ -1025,78 +1036,42 @@
         </div>
 
 
-        <form onsubmit="saveBarang(event)">
+        <form id="barangForm">
 
             <input
                 type="hidden"
                 id="barangEditId"
             >
 
-            <div class="image-upload">
 
-                <div class="image-preview">
+            <div class="form-grid">
 
-                    <img
-                        id="barangImagePreview"
-                        src=""
-                        alt="Preview"
+                <div class="form-group">
+
+                    <label>Nama Barang</label>
+
+                    <input
+                        type="text"
+                        id="barangNama"
+                        required
                     >
-
-                    <div id="imagePlaceholder">
-                        📷
-                    </div>
 
                 </div>
 
-                <label class="upload-button">
 
-                    📷 Pilih Gambar
+                <div class="form-group">
+
+                    <label>Kategori</label>
 
                     <input
-                        type="file"
-                        id="barangImage"
-                        accept="image/*"
-                        onchange="previewBarangImage(event)"
+                        type="text"
+                        id="barangKategori"
+                        placeholder="Contoh: Minuman"
+                        required
                     >
 
-                </label>
+                </div>
 
-                <small>
-                    Format JPG, PNG, WEBP
-                </small>
-
-            </div>
-
-
-            <div class="form-group">
-
-                <label>Nama Barang</label>
-
-                <input
-                    type="text"
-                    id="barangNama"
-                    required
-                    placeholder="Contoh: Indomie Goreng"
-                >
-
-            </div>
-
-
-            <div class="form-group">
-
-                <label>Kategori</label>
-
-                <input
-                    type="text"
-                    id="barangKategori"
-                    required
-                    placeholder="Contoh: Makanan"
-                >
-
-            </div>
-
-
-            <div class="form-row">
 
                 <div class="form-group">
 
@@ -1111,6 +1086,7 @@
 
                 </div>
 
+
                 <div class="form-group">
 
                     <label>Harga Jual</label>
@@ -1124,14 +1100,10 @@
 
                 </div>
 
-            </div>
-
-
-            <div class="form-row">
 
                 <div class="form-group">
 
-                    <label>Stok</label>
+                    <label>Stok Awal</label>
 
                     <input
                         type="number"
@@ -1142,6 +1114,7 @@
 
                 </div>
 
+
                 <div class="form-group">
 
                     <label>Satuan</label>
@@ -1149,11 +1122,43 @@
                     <input
                         type="text"
                         id="barangSatuan"
-                        placeholder="pcs"
+                        placeholder="pcs / botol / dus"
                         required
                     >
 
                 </div>
+
+            </div>
+
+
+            <div class="form-group">
+
+                <label>Gambar Barang</label>
+
+                <input
+                    type="file"
+                    id="barangGambar"
+                    accept="image/*"
+                    onchange="previewBarangImage(event)"
+                >
+
+                <small class="form-hint">
+                    Maksimal ukuran gambar 1 MB.
+                </small>
+
+            </div>
+
+
+            <div
+                id="imagePreviewContainer"
+                class="image-preview-container hidden"
+            >
+
+                <img
+                    id="barangImagePreview"
+                    src=""
+                    alt="Preview"
+                >
 
             </div>
 
@@ -1185,18 +1190,21 @@
 
 
 <!-- =====================================================
-     MODAL STOK
+     MODAL BARANG MASUK
 ===================================================== -->
 
-<div id="stokModal" class="modal">
+<div
+    id="stokModal"
+    class="modal hidden"
+>
 
-    <div class="modal-content small-modal">
+    <div class="modal-card">
 
         <div class="modal-header">
 
             <div>
-                <h2>Tambah Stok</h2>
-                <p>Masukkan jumlah barang masuk</p>
+                <h3>Tambah Barang Masuk</h3>
+                <p>Tambahkan jumlah stok.</p>
             </div>
 
             <button
@@ -1209,7 +1217,7 @@
         </div>
 
 
-        <form onsubmit="tambahStok(event)">
+        <form id="stokForm">
 
             <div class="form-group">
 
@@ -1232,7 +1240,6 @@
                     id="stokJumlah"
                     min="1"
                     required
-                    placeholder="Contoh: 20"
                 >
 
             </div>
@@ -1252,7 +1259,7 @@
                     type="submit"
                     class="btn btn-primary"
                 >
-                    Tambah Stok
+                    Tambahkan Stok
                 </button>
 
             </div>
@@ -1268,15 +1275,23 @@
      MODAL AKUN
 ===================================================== -->
 
-<div id="akunModal" class="modal">
+<div
+    id="akunModal"
+    class="modal hidden"
+>
 
-    <div class="modal-content small-modal">
+    <div class="modal-card">
 
         <div class="modal-header">
 
             <div>
-                <h2>Tambah Akun</h2>
-                <p>Buat akun pengguna baru</p>
+                <h3 id="akunModalTitle">
+                    Tambah Akun
+                </h3>
+
+                <p>
+                    Kelola akun pengguna.
+                </p>
             </div>
 
             <button
@@ -1289,11 +1304,17 @@
         </div>
 
 
-        <form onsubmit="saveAkun(event)">
+        <form id="akunForm">
+
+            <input
+                type="hidden"
+                id="akunEditId"
+            >
+
 
             <div class="form-group">
 
-                <label>Nama Lengkap</label>
+                <label>Nama</label>
 
                 <input
                     type="text"
@@ -1324,7 +1345,7 @@
                 <input
                     type="password"
                     id="akunPassword"
-                    required
+                    placeholder="Kosongkan jika tidak diubah"
                 >
 
             </div>
@@ -1349,6 +1370,13 @@
             </div>
 
 
+            <div class="role-warning">
+
+                ⚠️ Perubahan role hanya dapat dilakukan oleh Admin.
+
+            </div>
+
+
             <div class="modal-actions">
 
                 <button
@@ -1363,7 +1391,7 @@
                     type="submit"
                     class="btn btn-primary"
                 >
-                    Buat Akun
+                    Simpan Akun
                 </button>
 
             </div>
@@ -1379,15 +1407,18 @@
      MODAL DETAIL TRANSAKSI
 ===================================================== -->
 
-<div id="transactionModal" class="modal">
+<div
+    id="transactionModal"
+    class="modal hidden"
+>
 
-    <div class="modal-content">
+    <div class="modal-card large-modal">
 
         <div class="modal-header">
 
             <div>
-                <h2>Detail Transaksi</h2>
-                <p id="transactionSubtitle"></p>
+                <h3>Detail Transaksi</h3>
+                <p id="transactionModalSubtitle"></p>
             </div>
 
             <button
@@ -1402,31 +1433,14 @@
 
         <div id="transactionDetail"></div>
 
-
-        <div class="modal-actions">
-
-            <button
-                class="btn btn-outline"
-                onclick="closeModal('transactionModal')"
-            >
-                Tutup
-            </button>
-
-            <button
-                class="btn btn-primary"
-                onclick="printTransaction()"
-            >
-                🧾 Cetak Struk
-            </button>
-
-        </div>
-
     </div>
 
 </div>
 
 
-<!-- TOAST -->
+<!-- =====================================================
+     TOAST
+===================================================== -->
 
 <div id="toastContainer"></div>
 
