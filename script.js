@@ -1,781 +1,381 @@
 /* =====================================================
    TOKOTOKOAND
-   MAIN JAVASCRIPT
-===================================================== */
+   Sistem Manajemen Toko
+   ===================================================== */
 
 
-/* =====================================================
-   LOCAL STORAGE
-===================================================== */
+/* ================= STORAGE ================= */
 
-const STORAGE = {
-
-    akun: "tokotokand_akun",
-    barang: "tokotokand_barang",
-    transaksi: "tokotokand_transaksi",
-    currentUser: "tokotokand_current_user",
-    theme: "tokotokand_theme"
-
-};
-
-
-/* =====================================================
-   DATA
-===================================================== */
-
-let akun =
-    JSON.parse(
-        localStorage.getItem(STORAGE.akun)
-    ) || [];
-
-
-let barang =
-    JSON.parse(
-        localStorage.getItem(STORAGE.barang)
-    ) || [];
-
-
-let transaksi =
-    JSON.parse(
-        localStorage.getItem(STORAGE.transaksi)
-    ) || [];
-
+let akun = JSON.parse(localStorage.getItem("tokotokand_akun")) || [];
+let barang = JSON.parse(localStorage.getItem("tokotokand_barang")) || [];
+let transaksi = JSON.parse(localStorage.getItem("tokotokand_transaksi")) || [];
 
 let currentUser =
-    JSON.parse(
-        localStorage.getItem(STORAGE.currentUser)
-    ) || null;
+    JSON.parse(localStorage.getItem("tokotokand_current_user")) || null;
 
+let theme =
+    localStorage.getItem("tokotokand_theme") || "light";
 
 let cart = [];
 
-let paymentStatus = "Belum Bayar";
 
-let theme =
-    localStorage.getItem(STORAGE.theme) || "light";
-
-
-/* =====================================================
-   INITIALIZATION
-===================================================== */
+/* ================= INITIALIZATION ================= */
 
 document.addEventListener("DOMContentLoaded", () => {
 
     ensureDefaultAdmin();
 
+    setupForms();
+    setupNavigation();
     applyTheme();
 
-    setupForms();
-
-    setupNavigation();
-
-    updateDate();
-
     if (currentUser) {
-
         showApp();
-
     } else {
-
         showLogin();
-
     }
 
+    updateAll();
 });
 
 
-/* =====================================================
-   DEFAULT ADMIN
-===================================================== */
+/* ================= DEFAULT ADMIN ================= */
 
 function ensureDefaultAdmin() {
 
-    const adminExists =
-        akun.some(
-            a =>
-                a.username.toLowerCase() === "admin"
-        );
-
+    const adminExists = akun.some(
+        user => user.username === "admin"
+    );
 
     if (!adminExists) {
 
-        akun.unshift({
-
+        akun.push({
             id: "USR001",
-
             nama: "Administrator",
-
             username: "admin",
-
-            password: "admin123",
-
+            password: "admin303030",
             role: "Admin",
-
-            tanggalDaftar:
-                new Date().toISOString()
-
+            tanggalDaftar: new Date().toISOString()
         });
 
         saveData();
-
     }
-
 }
 
 
-/* =====================================================
-   SAVE DATA
-===================================================== */
+/* ================= STORAGE ================= */
 
 function saveData() {
 
     localStorage.setItem(
-        STORAGE.akun,
+        "tokotokand_akun",
         JSON.stringify(akun)
     );
 
-
     localStorage.setItem(
-        STORAGE.barang,
+        "tokotokand_barang",
         JSON.stringify(barang)
     );
 
-
     localStorage.setItem(
-        STORAGE.transaksi,
+        "tokotokand_transaksi",
         JSON.stringify(transaksi)
     );
 
-
-    if (currentUser) {
-
-        localStorage.setItem(
-            STORAGE.currentUser,
-            JSON.stringify(currentUser)
-        );
-
-    } else {
-
-        localStorage.removeItem(
-            STORAGE.currentUser
-        );
-
-    }
-
+    localStorage.setItem(
+        "tokotokand_current_user",
+        JSON.stringify(currentUser)
+    );
 }
 
 
-/* =====================================================
-   SETUP FORMS
-===================================================== */
+/* ================= AUTH ================= */
 
 function setupForms() {
 
-    const loginForm =
-        document.getElementById("loginForm");
+    document.getElementById("loginForm")
+        .addEventListener("submit", login);
 
+    document.getElementById("registerForm")
+        .addEventListener("submit", registerAccount);
 
-    if (loginForm) {
+    document.getElementById("barangForm")
+        .addEventListener("submit", saveBarang);
 
-        loginForm.addEventListener(
-            "submit",
-            function (event) {
+    document.getElementById("stokForm")
+        .addEventListener("submit", tambahStok);
 
-                event.preventDefault();
-
-                login();
-
-            }
-        );
-
-    }
-
-
-    const registerForm =
-        document.getElementById("registerForm");
-
-
-    if (registerForm) {
-
-        registerForm.addEventListener(
-            "submit",
-            function (event) {
-
-                event.preventDefault();
-
-                registerAccount();
-
-            }
-        );
-
-    }
-
-
-    const barangForm =
-        document.getElementById("barangForm");
-
-
-    if (barangForm) {
-
-        barangForm.addEventListener(
-            "submit",
-            function (event) {
-
-                event.preventDefault();
-
-                saveBarang();
-
-            }
-        );
-
-    }
-
-
-    const stokForm =
-        document.getElementById("stokForm");
-
-
-    if (stokForm) {
-
-        stokForm.addEventListener(
-            "submit",
-            function (event) {
-
-                event.preventDefault();
-
-                tambahStok();
-
-            }
-        );
-
-    }
-
-
-    const akunForm =
-        document.getElementById("akunForm");
-
-
-    if (akunForm) {
-
-        akunForm.addEventListener(
-            "submit",
-            function (event) {
-
-                event.preventDefault();
-
-                saveAkun();
-
-            }
-        );
-
-    }
-
+    document.getElementById("akunForm")
+        .addEventListener("submit", saveAkun);
 }
 
 
-/* =====================================================
-   LOGIN / REGISTER PAGE
-===================================================== */
-
 function showLogin() {
 
-    document
-        .getElementById("loginPage")
+    document.getElementById("loginPage")
         .classList.remove("hidden");
 
-
-    document
-        .getElementById("registerPage")
+    document.getElementById("registerPage")
         .classList.add("hidden");
 
-
-    document
-        .getElementById("appPage")
+    document.getElementById("appPage")
         .classList.add("hidden");
-
 }
 
 
 function showRegister() {
 
-    document
-        .getElementById("loginPage")
+    document.getElementById("loginPage")
         .classList.add("hidden");
 
-
-    document
-        .getElementById("registerPage")
+    document.getElementById("registerPage")
         .classList.remove("hidden");
 
-
-    document
-        .getElementById("appPage")
+    document.getElementById("appPage")
         .classList.add("hidden");
-
 }
 
 
-function login() {
+function login(event) {
+
+    event.preventDefault();
 
     const username =
-        document
-            .getElementById("loginUsername")
-            .value
-            .trim();
-
+        document.getElementById("loginUsername").value.trim();
 
     const password =
-        document
-            .getElementById("loginPassword")
-            .value;
+        document.getElementById("loginPassword").value;
 
-
-    const user =
-        akun.find(
-            a =>
-                a.username.toLowerCase() ===
-                    username.toLowerCase()
-                &&
-                a.password === password
-        );
-
+    const user = akun.find(
+        item =>
+            item.username.toLowerCase() === username.toLowerCase() &&
+            item.password === password
+    );
 
     if (!user) {
-
-        showToast(
-            "Username atau password salah.",
-            "error"
-        );
-
+        showToast("Username atau password salah.");
         return;
-
     }
 
+    currentUser = user;
 
-    currentUser = {
-        id: user.id,
-        nama: user.nama,
-        username: user.username,
-        role: user.role
-    };
+    localStorage.setItem(
+        "tokotokand_current_user",
+        JSON.stringify(currentUser)
+    );
 
-
-    saveData();
+    document.getElementById("loginForm").reset();
 
     showApp();
 
-    showToast(
-        `Selamat datang, ${user.nama}!`,
-        "success"
-    );
-
+    showToast("Login berhasil. Selamat datang!");
 }
 
 
-function registerAccount() {
+function registerAccount(event) {
+
+    event.preventDefault();
 
     const nama =
-        document
-            .getElementById("registerNama")
-            .value
-            .trim();
-
+        document.getElementById("registerNama").value.trim();
 
     const username =
-        document
-            .getElementById("registerUsername")
-            .value
-            .trim();
-
+        document.getElementById("registerUsername").value.trim();
 
     const password =
-        document
-            .getElementById("registerPassword")
-            .value;
-
+        document.getElementById("registerPassword").value;
 
     const confirm =
-        document
-            .getElementById("registerConfirm")
-            .value;
-
-
-    if (!nama || !username || !password) {
-
-        showToast(
-            "Semua data harus diisi.",
-            "warning"
-        );
-
-        return;
-
-    }
-
-
-    if (password.length < 6) {
-
-        showToast(
-            "Password minimal 6 karakter.",
-            "warning"
-        );
-
-        return;
-
-    }
-
+        document.getElementById("registerConfirm").value;
 
     if (password !== confirm) {
-
-        showToast(
-            "Konfirmasi password tidak cocok.",
-            "error"
-        );
-
+        showToast("Konfirmasi password tidak sama.");
         return;
-
     }
 
-
-    const usernameExists =
-        akun.some(
-            a =>
-                a.username.toLowerCase() ===
-                username.toLowerCase()
-        );
-
+    const usernameExists = akun.some(
+        user =>
+            user.username.toLowerCase() === username.toLowerCase()
+    );
 
     if (usernameExists) {
-
-        showToast(
-            "Username sudah digunakan.",
-            "error"
-        );
-
+        showToast("Username sudah digunakan.");
         return;
-
     }
 
-
-    const akunBaru = {
+    const newUser = {
 
         id: generateId("USR"),
 
-        nama: nama,
+        nama,
 
-        username: username,
+        username,
 
-        password: password,
+        password,
 
         role: "Member",
 
-        tanggalDaftar:
-            new Date().toISOString()
-
+        tanggalDaftar: new Date().toISOString()
     };
 
-
-    akun.push(akunBaru);
+    akun.push(newUser);
 
     saveData();
 
-    document
-        .getElementById("registerForm")
-        .reset();
-
+    document.getElementById("registerForm").reset();
 
     showLogin();
 
-
     showToast(
-        "Akun berhasil dibuat sebagai Member.",
-        "success"
+        "Akun berhasil dibuat. Silakan login."
     );
-
 }
 
 
-/* =====================================================
-   PASSWORD
-===================================================== */
+function logout() {
+
+    currentUser = null;
+    cart = [];
+
+    localStorage.removeItem(
+        "tokotokand_current_user"
+    );
+
+    showLogin();
+
+    showToast("Anda telah logout.");
+}
+
 
 function togglePassword(inputId, button) {
 
     const input =
         document.getElementById(inputId);
 
-
     if (input.type === "password") {
 
         input.type = "text";
-
         button.textContent = "🙈";
 
     } else {
 
         input.type = "password";
-
-        button.textContent = "👁️";
-
+        button.textContent = "👁";
     }
-
 }
 
 
-/* =====================================================
-   SHOW APP
-===================================================== */
+/* ================= APP ================= */
 
 function showApp() {
 
-    document
-        .getElementById("loginPage")
+    document.getElementById("loginPage")
         .classList.add("hidden");
 
-
-    document
-        .getElementById("registerPage")
+    document.getElementById("registerPage")
         .classList.add("hidden");
 
-
-    document
-        .getElementById("appPage")
+    document.getElementById("appPage")
         .classList.remove("hidden");
-
 
     updateUserInterface();
 
     updateAll();
 
-    goToPage("dashboard");
-
+    showPage("dashboard");
 }
 
-
-/* =====================================================
-   USER INTERFACE
-===================================================== */
 
 function updateUserInterface() {
 
     if (!currentUser) return;
 
-
-    const initial =
-        currentUser.nama
-            .charAt(0)
-            .toUpperCase();
-
-
-    document
-        .getElementById("sidebarAvatar")
-        .textContent = initial;
-
-
-    document
-        .getElementById("topbarAvatar")
-        .textContent = initial;
-
-
-    document
-        .getElementById("sidebarUserName")
-        .textContent =
+    document.getElementById("currentUserName").textContent =
         currentUser.nama;
 
-
-    document
-        .getElementById("sidebarUserRole")
-        .textContent =
+    document.getElementById("currentUserRole").textContent =
         currentUser.role;
 
-
-    document
-        .getElementById("topbarName")
-        .textContent =
+    document.getElementById("welcomeName").textContent =
         currentUser.nama;
 
+    document.getElementById("userAvatar").textContent =
+        currentUser.nama.charAt(0).toUpperCase();
 
-    document
-        .getElementById("topbarRole")
-        .textContent =
-        currentUser.role;
+    document.querySelectorAll(".admin-only")
+        .forEach(element => {
 
-
-    document
-        .getElementById("welcomeName")
-        .textContent =
-        currentUser.nama;
-
-
-    const adminOnly =
-        document.querySelectorAll(".admin-only");
-
-
-    adminOnly.forEach(element => {
-
-        if (currentUser.role === "Admin") {
-
-            element.classList.remove("hidden");
-
-        } else {
-
-            element.classList.add("hidden");
-
-        }
-
-    });
-
+            if (currentUser.role === "Admin") {
+                element.style.display = "";
+            } else {
+                element.style.display = "none";
+            }
+        });
 }
 
 
-/* =====================================================
-   LOGOUT
-===================================================== */
-
-function logout() {
-
-    currentUser = null;
-
-    cart = [];
-
-    paymentStatus = "Belum Bayar";
-
-    saveData();
-
-    showLogin();
-
-    document
-        .getElementById("loginForm")
-        .reset();
-
-    showToast(
-        "Anda telah logout.",
-        "success"
-    );
-
-}
-
-
-/* =====================================================
-   NAVIGATION
-===================================================== */
+/* ================= NAVIGATION ================= */
 
 function setupNavigation() {
 
-    document
-        .querySelectorAll(".nav-item")
+    document.querySelectorAll(".nav-item[data-page]")
         .forEach(button => {
 
-            button.addEventListener(
-                "click",
-                function () {
+            button.addEventListener("click", () => {
 
-                    const page =
-                        this.dataset.page;
+                const page =
+                    button.dataset.page;
 
-
-                    if (
-                        this.classList.contains("admin-only")
-                        &&
-                        currentUser?.role !== "Admin"
-                    ) {
-
-                        showToast(
-                            "Menu ini hanya dapat diakses Admin.",
-                            "error"
-                        );
-
-                        return;
-
-                    }
-
-
-                    goToPage(page);
-
+                if (
+                    button.classList.contains("admin-only") &&
+                    currentUser?.role !== "Admin"
+                ) {
+                    showToast("Menu ini hanya untuk Admin.");
+                    return;
                 }
-            );
 
+                showPage(page);
+            });
         });
-
 }
 
 
-function goToPage(page) {
+function showPage(page) {
 
     if (!currentUser) return;
 
-
     if (
-        ["barang", "stok", "member", "akun"].includes(page)
-        &&
+        ["barang", "stok", "pembayaran", "member", "akun"].includes(page) &&
         currentUser.role !== "Admin"
     ) {
-
-        showToast(
-            "Halaman ini hanya dapat diakses Admin.",
-            "error"
-        );
-
+        showToast("Anda tidak memiliki akses.");
         return;
-
     }
 
-
-    document
-        .querySelectorAll(".page")
-        .forEach(element => {
-
-            element.classList.remove(
-                "active-page"
-            );
-
+    document.querySelectorAll(".page")
+        .forEach(section => {
+            section.classList.remove("active-page");
         });
-
 
     const target =
-        document.getElementById(
-            `page-${page}`
-        );
+        document.getElementById(`page-${page}`);
 
+    if (!target) return;
 
-    if (target) {
+    target.classList.add("active-page");
 
-        target.classList.add(
-            "active-page"
-        );
-
-    }
-
-
-    document
-        .querySelectorAll(".nav-item")
+    document.querySelectorAll(".nav-item[data-page]")
         .forEach(button => {
-
             button.classList.remove("active");
 
-            if (
-                button.dataset.page === page
-            ) {
-
+            if (button.dataset.page === page) {
                 button.classList.add("active");
-
             }
-
         });
-
 
     updatePageTitle(page);
 
-
-    if (
-        window.innerWidth <= 768
-    ) {
-
-        document
-            .getElementById("sidebar")
-            .classList.remove("open");
-
-    }
-
+    updateAll();
 }
 
 
@@ -790,17 +390,22 @@ function updatePageTitle(page) {
 
         barang: [
             "Data Barang",
-            "Kelola barang toko"
+            "Kelola barang dan stok toko"
         ],
 
         stok: [
             "Barang Masuk",
-            "Kelola stok barang"
+            "Kelola stok barang masuk"
         ],
 
         penjualan: [
             "Penjualan",
             "Buat transaksi penjualan"
+        ],
+
+        pembayaran: [
+            "Pengecekan Pembayaran",
+            "Konfirmasi pembayaran Member"
         ],
 
         riwayat: [
@@ -810,431 +415,269 @@ function updatePageTitle(page) {
 
         member: [
             "Data Member",
-            "Data akun member"
+            "Data pengguna yang terdaftar"
         ],
 
         akun: [
             "Kelola Akun",
             "Kelola akun dan role pengguna"
         ]
-
     };
 
+    const data = titles[page];
 
-    const data =
-        titles[page] ||
-        titles.dashboard;
+    if (!data) return;
 
+    document.getElementById("pageTitle").textContent =
+        data[0];
 
-    document
-        .getElementById("pageTitle")
-        .textContent = data[0];
-
-
-    document
-        .getElementById("pageSubtitle")
-        .textContent = data[1];
-
+    document.getElementById("pageSubtitle").textContent =
+        data[1];
 }
 
 
-function toggleSidebar() {
-
-    document
-        .getElementById("sidebar")
-        .classList.toggle("open");
-
-}
-
-
-/* =====================================================
-   UPDATE ALL
-===================================================== */
+/* ================= UPDATE ALL ================= */
 
 function updateAll() {
 
+    if (!currentUser) return;
+
     renderDashboard();
-
     renderBarang();
-
     renderStok();
-
     renderSaleOptions();
-
     renderCart();
-
+    renderPembayaran();
     renderRiwayat();
-
     renderMember();
-
     renderAkun();
-
-    updateDate();
-
 }
 
 
-/* =====================================================
-   DASHBOARD
-===================================================== */
+/* ================= DASHBOARD ================= */
 
 function renderDashboard() {
 
-    const totalBarang =
-        barang.length;
-
+    const totalBarang = barang.length;
 
     const totalStok =
         barang.reduce(
             (total, item) =>
-                total +
-                Number(item.stok || 0),
+                total + Number(item.stok || 0),
             0
         );
 
-
     const today =
-        new Date()
-            .toISOString()
-            .split("T")[0];
-
+        new Date().toDateString();
 
     const penjualanHariIni =
         transaksi
-            .filter(
-                t =>
-                    t.tanggal
-                        .startsWith(today)
+            .filter(item =>
+                new Date(item.tanggal).toDateString() === today
             )
             .reduce(
-                (total, t) =>
-                    total +
-                    Number(t.total || 0),
+                (total, item) =>
+                    total + Number(item.total || 0),
                 0
             );
 
-
-    const stokMenipis =
-        barang.filter(
-            item =>
-                Number(item.stok) <= 10
-        ).length;
-
-
-    document
-        .getElementById("totalBarang")
-        .textContent =
+    document.getElementById("dashTotalBarang").textContent =
         totalBarang;
 
-
-    document
-        .getElementById("totalStok")
-        .textContent =
+    document.getElementById("dashTotalStok").textContent =
         totalStok;
 
-
-    document
-        .getElementById("penjualanHariIni")
-        .textContent =
+    document.getElementById("dashPenjualanHariIni").textContent =
         rupiah(penjualanHariIni);
 
-
-    document
-        .getElementById("stokMenipis")
-        .textContent =
-        stokMenipis;
-
-
     renderLowStock();
-
     renderRecentTransactions();
-
 }
 
 
 function renderLowStock() {
 
-    const tbody =
-        document.getElementById(
-            "lowStockBody"
-        );
+    const container =
+        document.getElementById("lowStockContainer");
 
+    const lowStock =
+        barang.filter(item => Number(item.stok) <= 10);
 
-    const data =
-        barang
-            .filter(
-                item =>
-                    Number(item.stok) <= 10
-            )
-            .sort(
-                (a, b) =>
-                    Number(a.stok) -
-                    Number(b.stok)
-            )
-            .slice(0, 8);
+    if (lowStock.length === 0) {
 
-
-    if (data.length === 0) {
-
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="3" class="empty-state">
-                    Tidak ada barang dengan stok menipis.
-                </td>
-            </tr>
-        `;
+        container.innerHTML =
+            `<div class="empty-state">Semua stok masih aman 👍</div>`;
 
         return;
-
     }
 
+    container.innerHTML = `
+        <div class="stock-list">
+            ${lowStock.slice(0, 6).map(item => `
+                <div class="stock-row">
+                    <div>
+                        <div class="stock-name">
+                            ${escapeHTML(item.nama)}
+                        </div>
+                        <div class="stock-detail">
+                            ${escapeHTML(item.kategori)}
+                        </div>
+                    </div>
 
-    tbody.innerHTML =
-        data.map(item => {
-
-            return `
-                <tr>
-
-                    <td>
-                        ${escapeHTML(item.nama)}
-                    </td>
-
-                    <td>
-                        ${item.stok}
-                        ${escapeHTML(item.satuan)}
-                    </td>
-
-                    <td>
-                        ${getStatusBadge(item.stok)}
-                    </td>
-
-                </tr>
-            `;
-
-        }).join("");
-
+                    ${getStatusBadge(item.stok)}
+                </div>
+            `).join("")}
+        </div>
+    `;
 }
 
 
 function renderRecentTransactions() {
 
-    const tbody =
+    const container =
         document.getElementById(
-            "recentTransactionBody"
+            "recentTransactionContainer"
         );
 
+    let data = [...transaksi];
 
-    const data =
-        [...transaksi]
-            .sort(
-                (a, b) =>
-                    new Date(b.tanggal) -
-                    new Date(a.tanggal)
-            )
-            .slice(0, 5);
+    if (currentUser.role !== "Admin") {
 
+        data = data.filter(
+            item =>
+                item.memberId === currentUser.id
+        );
+    }
+
+    data.sort(
+        (a, b) =>
+            new Date(b.tanggal) -
+            new Date(a.tanggal)
+    );
+
+    data = data.slice(0, 5);
 
     if (data.length === 0) {
 
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="4" class="empty-state">
-                    Belum ada transaksi.
-                </td>
-            </tr>
-        `;
+        container.innerHTML =
+            `<div class="empty-state">Belum ada transaksi.</div>`;
 
         return;
-
     }
 
+    container.innerHTML = `
+        <div class="transaction-list">
 
-    tbody.innerHTML =
-        data.map(t => {
+            ${data.map(item => `
 
-            return `
-                <tr>
+                <div class="transaction-row">
 
-                    <td>
-                        ${escapeHTML(t.id)}
-                    </td>
+                    <div>
+                        <div class="transaction-name">
+                            ${escapeHTML(item.memberNama)}
+                        </div>
 
-                    <td>
-                        ${escapeHTML(t.memberNama)}
-                    </td>
+                        <div class="transaction-detail">
+                            ${item.id} • ${formatDate(item.tanggal)}
+                        </div>
+                    </div>
 
-                    <td>
-                        ${rupiah(t.total)}
-                    </td>
+                    <strong>
+                        ${rupiah(item.total)}
+                    </strong>
 
-                    <td>
-                        ${getPaymentBadge(t.paymentStatus)}
-                    </td>
+                </div>
 
-                </tr>
-            `;
+            `).join("")}
 
-        }).join("");
-
+        </div>
+    `;
 }
 
 
-/* =====================================================
-   BARANG
-===================================================== */
+/* ================= BARANG ================= */
 
 function renderBarang() {
 
-    const tbody =
-        document.getElementById(
-            "barangTableBody"
-        );
+    const table =
+        document.getElementById("barangTable");
 
+    if (!table) return;
 
-    if (!tbody) return;
+    if (barang.length === 0) {
 
-
-    const search =
-        document
-            .getElementById("searchBarang")
-            ?.value
-            .toLowerCase()
-            .trim() || "";
-
-
-    const data =
-        barang.filter(item => {
-
-            return (
-
-                item.nama
-                    .toLowerCase()
-                    .includes(search)
-
-                ||
-
-                item.id
-                    .toLowerCase()
-                    .includes(search)
-
-                ||
-
-                item.kategori
-                    .toLowerCase()
-                    .includes(search)
-
-            );
-
-        });
-
-
-    if (data.length === 0) {
-
-        tbody.innerHTML = `
+        table.innerHTML = `
             <tr>
-                <td colspan="10" class="empty-state">
+                <td colspan="10" class="empty-cell">
                     Belum ada data barang.
                 </td>
             </tr>
         `;
 
         return;
-
     }
 
+    table.innerHTML = barang.map(item => `
 
-    tbody.innerHTML =
-        data.map(item => {
+        <tr>
 
-            const image =
-                item.gambar
-                    ? `
-                        <img
-                            src="${item.gambar}"
-                            class="product-thumb"
-                            alt="${escapeHTML(item.nama)}"
-                        >
-                    `
-                    : `
-                        <div class="no-image">
-                            📦
-                        </div>
-                    `;
+            <td>
+                ${
+                    item.gambar
+                    ?
+                    `<img src="${item.gambar}" class="item-image">`
+                    :
+                    `<div class="no-image">📦</div>`
+                }
+            </td>
 
+            <td>${escapeHTML(item.id)}</td>
 
-            return `
-                <tr>
+            <td>
+                <strong>${escapeHTML(item.nama)}</strong>
+            </td>
 
-                    <td>
-                        ${image}
-                    </td>
+            <td>${escapeHTML(item.kategori)}</td>
 
-                    <td>
-                        ${escapeHTML(item.id)}
-                    </td>
+            <td>${rupiah(item.hargaBeli)}</td>
 
-                    <td>
-                        <strong>
-                            ${escapeHTML(item.nama)}
-                        </strong>
-                    </td>
+            <td>${rupiah(item.hargaJual)}</td>
 
-                    <td>
-                        ${escapeHTML(item.kategori)}
-                    </td>
+            <td>${item.stok}</td>
 
-                    <td>
-                        ${rupiah(item.hargaBeli)}
-                    </td>
+            <td>${escapeHTML(item.satuan)}</td>
 
-                    <td>
-                        ${rupiah(item.hargaJual)}
-                    </td>
+            <td>${getStatusBadge(item.stok)}</td>
 
-                    <td>
-                        <strong>
-                            ${item.stok}
-                        </strong>
-                    </td>
+            <td>
 
-                    <td>
-                        ${escapeHTML(item.satuan)}
-                    </td>
+                <div class="action-buttons">
 
-                    <td>
-                        ${getStatusBadge(item.stok)}
-                    </td>
+                    <button
+                        class="btn-small btn-edit"
+                        onclick="editBarang('${item.id}')">
+                        Edit
+                    </button>
 
-                    <td>
+                    <button
+                        class="btn-small btn-delete"
+                        onclick="deleteBarang('${item.id}')">
+                        Hapus
+                    </button>
 
-                        <button
-                            class="btn btn-small btn-outline"
-                            onclick="editBarang('${item.id}')"
-                        >
-                            ✏️
-                        </button>
+                </div>
 
-                        <button
-                            class="btn btn-small btn-danger"
-                            onclick="deleteBarang('${item.id}')"
-                        >
-                            🗑️
-                        </button>
+            </td>
 
-                    </td>
+        </tr>
 
-                </tr>
-            `;
-
-        }).join("");
-
+    `).join("");
 }
 
 
 function getStatusBadge(stok) {
 
     stok = Number(stok);
-
 
     if (stok === 0) {
 
@@ -1246,7 +689,6 @@ function getStatusBadge(stok) {
 
     }
 
-
     if (stok <= 10) {
 
         return `
@@ -1257,675 +699,384 @@ function getStatusBadge(stok) {
 
     }
 
-
     return `
         <span class="badge badge-success">
             Tersedia
         </span>
     `;
-
 }
 
 
-/* =====================================================
-   BARANG MODAL
-===================================================== */
+/* ================= BARANG MODAL ================= */
 
 function openBarangModal(id = null) {
 
-    if (currentUser?.role !== "Admin") {
+    if (currentUser?.role !== "Admin") return;
 
-        showToast(
-            "Hanya Admin yang dapat mengelola barang.",
-            "error"
-        );
+    document.getElementById("barangForm").reset();
 
-        return;
+    document.getElementById("barangId").value = "";
 
-    }
+    document.getElementById("imagePreview").innerHTML = "";
 
-
-    const modal =
-        document.getElementById(
-            "barangModal"
-        );
-
-
-    const form =
-        document.getElementById(
-            "barangForm"
-        );
-
-
-    form.reset();
-
-
-    document
-        .getElementById(
-            "barangEditId"
-        )
-        .value = "";
-
-
-    document
-        .getElementById(
-            "barangModalTitle"
-        )
-        .textContent =
-        "Tambah Barang";
-
-
-    document
-        .getElementById(
-            "imagePreviewContainer"
-        )
-        .classList.add("hidden");
-
+    document.getElementById("barangModalTitle").textContent =
+        id ? "Edit Barang" : "Tambah Barang";
 
     if (id) {
 
         const item =
-            barang.find(
-                b => b.id === id
-            );
-
+            barang.find(x => x.id === id);
 
         if (!item) return;
 
-
-        document
-            .getElementById(
-                "barangEditId"
-            )
-            .value =
+        document.getElementById("barangId").value =
             item.id;
 
-
-        document
-            .getElementById(
-                "barangNama"
-            )
-            .value =
+        document.getElementById("barangNama").value =
             item.nama;
 
-
-        document
-            .getElementById(
-                "barangKategori"
-            )
-            .value =
+        document.getElementById("barangKategori").value =
             item.kategori;
 
-
-        document
-            .getElementById(
-                "barangHargaBeli"
-            )
-            .value =
+        document.getElementById("barangHargaBeli").value =
             item.hargaBeli;
 
-
-        document
-            .getElementById(
-                "barangHargaJual"
-            )
-            .value =
+        document.getElementById("barangHargaJual").value =
             item.hargaJual;
 
-
-        document
-            .getElementById(
-                "barangStok"
-            )
-            .value =
+        document.getElementById("barangStok").value =
             item.stok;
 
-
-        document
-            .getElementById(
-                "barangSatuan"
-            )
-            .value =
+        document.getElementById("barangSatuan").value =
             item.satuan;
-
-
-        document
-            .getElementById(
-                "barangModalTitle"
-            )
-            .textContent =
-            "Edit Barang";
-
 
         if (item.gambar) {
 
-            document
-                .getElementById(
-                    "barangImagePreview"
-                )
-                .src =
-                item.gambar;
-
-
-            document
-                .getElementById(
-                    "imagePreviewContainer"
-                )
-                .classList.remove(
-                    "hidden"
-                );
-
+            document.getElementById("imagePreview").innerHTML =
+                `<img src="${item.gambar}">`;
         }
-
     }
 
-
-    modal.classList.remove(
-        "hidden"
-    );
-
+    openModal("barangModal");
 }
 
 
-function saveBarang() {
+function previewImage(input) {
+
+    const file = input.files[0];
+
+    const preview =
+        document.getElementById("imagePreview");
+
+    preview.innerHTML = "";
+
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+
+        showToast("File harus berupa gambar.");
+        input.value = "";
+        return;
+    }
+
+    if (file.size > 1024 * 1024) {
+
+        showToast("Ukuran gambar maksimal 1 MB.");
+        input.value = "";
+        return;
+    }
+
+    const reader = new FileReader();
+
+    reader.onload = event => {
+
+        preview.innerHTML =
+            `<img src="${event.target.result}">`;
+    };
+
+    reader.readAsDataURL(file);
+}
+
+
+function saveBarang(event) {
+
+    event.preventDefault();
+
+    if (currentUser?.role !== "Admin") return;
 
     const id =
-        document
-            .getElementById(
-                "barangEditId"
-            )
-            .value;
-
+        document.getElementById("barangId").value;
 
     const nama =
-        document
-            .getElementById(
-                "barangNama"
-            )
-            .value
-            .trim();
-
+        document.getElementById("barangNama").value.trim();
 
     const kategori =
-        document
-            .getElementById(
-                "barangKategori"
-            )
-            .value
-            .trim();
-
+        document.getElementById("barangKategori").value.trim();
 
     const hargaBeli =
-        Number(
-            document
-                .getElementById(
-                    "barangHargaBeli"
-                )
-                .value
-        );
-
+        Number(document.getElementById("barangHargaBeli").value);
 
     const hargaJual =
-        Number(
-            document
-                .getElementById(
-                    "barangHargaJual"
-                )
-                .value
-        );
-
+        Number(document.getElementById("barangHargaJual").value);
 
     const stok =
-        Number(
-            document
-                .getElementById(
-                    "barangStok"
-                )
-                .value
-        );
-
+        Number(document.getElementById("barangStok").value);
 
     const satuan =
-        document
-            .getElementById(
-                "barangSatuan"
-            )
-            .value
-            .trim();
-
+        document.getElementById("barangSatuan").value.trim();
 
     const file =
-        document
-            .getElementById(
-                "barangGambar"
-            )
-            .files[0];
-
-
-    if (
-        !nama ||
-        !kategori ||
-        !satuan ||
-        hargaBeli < 0 ||
-        hargaJual < 0 ||
-        stok < 0
-    ) {
-
-        showToast(
-            "Data barang belum lengkap.",
-            "warning"
-        );
-
-        return;
-
-    }
-
-
-    if (file && file.size > 1024 * 1024) {
-
-        showToast(
-            "Ukuran gambar maksimal 1 MB.",
-            "error"
-        );
-
-        return;
-
-    }
-
-
-    const existing =
-        id
-            ? barang.find(
-                b => b.id === id
-            )
-            : null;
-
-
-    const processSave =
-        gambar => {
-
-            if (existing) {
-
-                existing.nama =
-                    nama;
-
-                existing.kategori =
-                    kategori;
-
-                existing.hargaBeli =
-                    hargaBeli;
-
-                existing.hargaJual =
-                    hargaJual;
-
-                existing.stok =
-                    stok;
-
-                existing.satuan =
-                    satuan;
-
-                if (gambar !== null) {
-
-                    existing.gambar =
-                        gambar;
-
-                }
-
-                showToast(
-                    "Barang berhasil diperbarui.",
-                    "success"
-                );
-
-            } else {
-
-                barang.push({
-
-                    id:
-                        generateId("BRG"),
-
-                    nama,
-
-                    kategori,
-
-                    hargaBeli,
-
-                    hargaJual,
-
-                    stok,
-
-                    satuan,
-
-                    gambar:
-                        gambar || "",
-
-                    tanggalDibuat:
-                        new Date().toISOString()
-
-                });
-
-
-                showToast(
-                    "Barang berhasil ditambahkan.",
-                    "success"
-                );
-
-            }
-
-
-            saveData();
-
-            closeModal("barangModal");
-
-            updateAll();
-
-        };
-
+        document.getElementById("barangGambar").files[0];
 
     if (file) {
 
-        const reader =
-            new FileReader();
+        if (!file.type.startsWith("image/")) {
 
+            showToast("File gambar tidak valid.");
+            return;
+        }
 
-        reader.onload =
-            function (event) {
+        if (file.size > 1024 * 1024) {
 
-                processSave(
-                    event.target.result
-                );
+            showToast("Ukuran gambar maksimal 1 MB.");
+            return;
+        }
 
-            };
+        const reader = new FileReader();
 
+        reader.onload = () => {
+
+            saveBarangData(
+                id,
+                nama,
+                kategori,
+                hargaBeli,
+                hargaJual,
+                stok,
+                satuan,
+                reader.result
+            );
+        };
 
         reader.readAsDataURL(file);
 
     } else {
 
-        processSave(
-            existing
-                ? null
-                : ""
-        );
+        const old =
+            barang.find(x => x.id === id);
 
+        saveBarangData(
+            id,
+            nama,
+            kategori,
+            hargaBeli,
+            hargaJual,
+            stok,
+            satuan,
+            old ? old.gambar : ""
+        );
+    }
+}
+
+
+function saveBarangData(
+    id,
+    nama,
+    kategori,
+    hargaBeli,
+    hargaJual,
+    stok,
+    satuan,
+    gambar
+) {
+
+    if (id) {
+
+        const index =
+            barang.findIndex(item => item.id === id);
+
+        if (index !== -1) {
+
+            barang[index] = {
+                ...barang[index],
+                nama,
+                kategori,
+                hargaBeli,
+                hargaJual,
+                stok,
+                satuan,
+                gambar
+            };
+        }
+
+        showToast("Barang berhasil diperbarui.");
+
+    } else {
+
+        barang.push({
+
+            id: generateId("BRG"),
+
+            nama,
+            kategori,
+            hargaBeli,
+            hargaJual,
+            stok,
+            satuan,
+            gambar
+        });
+
+        showToast("Barang berhasil ditambahkan.");
     }
 
+    saveData();
+
+    closeModal("barangModal");
+
+    updateAll();
 }
 
 
 function editBarang(id) {
 
     openBarangModal(id);
-
 }
 
 
 function deleteBarang(id) {
 
-    if (currentUser?.role !== "Admin") {
-
-        showToast(
-            "Hanya Admin yang dapat menghapus barang.",
-            "error"
-        );
-
-        return;
-
-    }
-
+    if (currentUser?.role !== "Admin") return;
 
     const item =
-        barang.find(
-            b => b.id === id
-        );
-
+        barang.find(x => x.id === id);
 
     if (!item) return;
 
-
-    const confirmDelete =
+    const yakin =
         confirm(
             `Hapus barang "${item.nama}"?`
         );
 
-
-    if (!confirmDelete) return;
-
+    if (!yakin) return;
 
     barang =
-        barang.filter(
-            b => b.id !== id
-        );
-
+        barang.filter(x => x.id !== id);
 
     saveData();
 
     updateAll();
 
-
-    showToast(
-        "Barang berhasil dihapus.",
-        "success"
-    );
-
+    showToast("Barang berhasil dihapus.");
 }
 
 
-/* =====================================================
-   IMAGE PREVIEW
-===================================================== */
-
-function previewBarangImage(event) {
-
-    const file =
-        event.target.files[0];
-
-
-    if (!file) return;
-
-
-    if (file.size > 1024 * 1024) {
-
-        showToast(
-            "Ukuran gambar maksimal 1 MB.",
-            "error"
-        );
-
-        event.target.value = "";
-
-        return;
-
-    }
-
-
-    const reader =
-        new FileReader();
-
-
-    reader.onload =
-        function (e) {
-
-            document
-                .getElementById(
-                    "barangImagePreview"
-                )
-                .src =
-                e.target.result;
-
-
-            document
-                .getElementById(
-                    "imagePreviewContainer"
-                )
-                .classList.remove(
-                    "hidden"
-                );
-
-        };
-
-
-    reader.readAsDataURL(file);
-
-}
-
-
-/* =====================================================
-   BARANG MASUK
-===================================================== */
+/* ================= STOK ================= */
 
 function renderStok() {
 
-    const tbody =
-        document.getElementById(
-            "stokTableBody"
-        );
+    const table =
+        document.getElementById("stokTable");
 
-
-    if (!tbody) return;
-
+    if (!table) return;
 
     if (barang.length === 0) {
 
-        tbody.innerHTML = `
+        table.innerHTML = `
             <tr>
-                <td colspan="4" class="empty-state">
-                    Belum ada barang.
+                <td colspan="5">
+                    Belum ada data barang.
                 </td>
             </tr>
         `;
 
         return;
-
     }
 
+    table.innerHTML =
+        barang.map(item => `
 
-    tbody.innerHTML =
-        barang.map(item => {
+            <tr>
 
-            return `
-                <tr>
+                <td>${item.id}</td>
 
-                    <td>
-                        ${escapeHTML(item.id)}
-                    </td>
-
-                    <td>
+                <td>
+                    <strong>
                         ${escapeHTML(item.nama)}
-                    </td>
+                    </strong>
+                </td>
 
-                    <td>
-                        <strong>
-                            ${item.stok}
-                        </strong>
-                    </td>
+                <td>${item.stok}</td>
 
-                    <td>
-                        ${escapeHTML(item.satuan)}
-                    </td>
+                <td>${escapeHTML(item.satuan)}</td>
 
-                </tr>
-            `;
+                <td>${getStatusBadge(item.stok)}</td>
 
-        }).join("");
+            </tr>
 
+        `).join("");
 }
 
 
 function openStokModal() {
 
-    if (currentUser?.role !== "Admin") {
+    if (currentUser?.role !== "Admin") return;
 
-        showToast(
-            "Hanya Admin yang dapat menambah stok.",
-            "error"
-        );
+    renderStokOptions();
 
-        return;
+    document.getElementById("stokForm").reset();
 
-    }
+    openModal("stokModal");
+}
 
+
+function renderStokOptions() {
 
     const select =
-        document.getElementById(
-            "stokBarang"
-        );
+        document.getElementById("stokBarang");
 
-
-    select.innerHTML = `
-        <option value="">
-            -- Pilih Barang --
-        </option>
-    `;
-
+    select.innerHTML =
+        `<option value="">-- Pilih Barang --</option>`;
 
     barang.forEach(item => {
 
         select.innerHTML += `
             <option value="${item.id}">
                 ${escapeHTML(item.nama)}
-                - Stok ${item.stok}
+                (stok: ${item.stok})
             </option>
         `;
-
     });
-
-
-    document
-        .getElementById("stokForm")
-        .reset();
-
-
-    document
-        .getElementById("stokModal")
-        .classList.remove(
-            "hidden"
-        );
-
 }
 
 
-function tambahStok() {
+function tambahStok(event) {
+
+    event.preventDefault();
+
+    if (currentUser?.role !== "Admin") return;
 
     const id =
-        document
-            .getElementById(
-                "stokBarang"
-            )
-            .value;
-
+        document.getElementById("stokBarang").value;
 
     const jumlah =
-        Number(
-            document
-                .getElementById(
-                    "stokJumlah"
-                )
-                .value
-        );
-
-
-    if (!id || jumlah <= 0) {
-
-        showToast(
-            "Pilih barang dan masukkan jumlah stok.",
-            "warning"
-        );
-
-        return;
-
-    }
-
+        Number(document.getElementById("stokJumlah").value);
 
     const item =
-        barang.find(
-            b => b.id === id
-        );
+        barang.find(x => x.id === id);
 
+    if (!item) {
 
-    if (!item) return;
+        showToast("Pilih barang terlebih dahulu.");
+        return;
+    }
 
+    if (jumlah <= 0) {
+
+        showToast("Jumlah harus lebih dari 0.");
+        return;
+    }
 
     item.stok += jumlah;
-
 
     saveData();
 
@@ -1933,67 +1084,51 @@ function tambahStok() {
 
     updateAll();
 
-
-    showToast(
-        `Stok ${item.nama} bertambah ${jumlah}.`,
-        "success"
-    );
-
+    showToast("Stok berhasil ditambahkan.");
 }
 
 
-/* =====================================================
-   SALES OPTIONS
-===================================================== */
+/* ================= PENJUALAN ================= */
 
 function renderSaleOptions() {
 
     const memberSelect =
-        document.getElementById(
-            "saleMember"
-        );
-
+        document.getElementById("saleMember");
 
     const barangSelect =
-        document.getElementById(
-            "saleBarang"
-        );
+        document.getElementById("saleBarang");
 
+    if (!memberSelect || !barangSelect) return;
 
-    if (!memberSelect || !barangSelect)
-        return;
+    memberSelect.innerHTML =
+        `<option value="">-- Pilih Pembeli --</option>`;
 
+    barangSelect.innerHTML =
+        `<option value="">-- Pilih Barang --</option>`;
 
-    memberSelect.innerHTML = `
-        <option value="UMUM">
-            Umum
-        </option>
-    `;
+    if (currentUser.role === "Member") {
 
+        memberSelect.innerHTML = `
+            <option value="${currentUser.id}">
+                ${escapeHTML(currentUser.nama)}
+            </option>
+        `;
 
-    akun
-        .filter(
-            a =>
-                a.role === "Member"
-        )
-        .forEach(memberItem => {
+        memberSelect.value =
+            currentUser.id;
+
+    } else {
+
+        akun.forEach(user => {
 
             memberSelect.innerHTML += `
-                <option value="${memberItem.id}">
-                    ${escapeHTML(memberItem.nama)}
-                    (@${escapeHTML(memberItem.username)})
+                <option value="${user.id}">
+                    ${escapeHTML(user.nama)}
+                    (${escapeHTML(user.role)})
                 </option>
             `;
-
         });
-
-
-    barangSelect.innerHTML = `
-        <option value="">
-            -- Pilih Barang --
-        </option>
-    `;
-
+    }
 
     barang.forEach(item => {
 
@@ -2002,179 +1137,69 @@ function renderSaleOptions() {
             barangSelect.innerHTML += `
                 <option value="${item.id}">
                     ${escapeHTML(item.nama)}
-                    - Stok ${item.stok}
                     - ${rupiah(item.hargaJual)}
+                    (stok ${item.stok})
                 </option>
             `;
-
         }
-
     });
-
 }
 
 
 function updateSalePrice() {
 
     const id =
-        document
-            .getElementById(
-                "saleBarang"
-            )
-            .value;
-
-
-    const preview =
-        document.getElementById(
-            "saleProductPreview"
-        );
-
-
-    if (!id) {
-
-        preview.classList.add(
-            "hidden"
-        );
-
-        return;
-
-    }
-
+        document.getElementById("saleBarang").value;
 
     const item =
-        barang.find(
-            b => b.id === id
-        );
+        barang.find(x => x.id === id);
 
-
-    if (!item) return;
-
-
-    const image =
-        document.getElementById(
-            "saleProductImage"
-        );
-
-
-    if (item.gambar) {
-
-        image.src =
-            item.gambar;
-
-    } else {
-
-        image.src =
-            "";
-
-    }
-
-
-    document
-        .getElementById(
-            "saleProductName"
-        )
-        .textContent =
-        item.nama;
-
-
-    document
-        .getElementById(
-            "saleProductPrice"
-        )
-        .textContent =
-        `${rupiah(item.hargaJual)} / ${item.satuan}`;
-
-
-    preview.classList.remove(
-        "hidden"
-    );
-
+    document.getElementById("salePrice").textContent =
+        item ? rupiah(item.hargaJual) : "Rp0";
 }
 
 
-/* =====================================================
-   CART
-===================================================== */
-
 function addToCart() {
 
-    const id =
-        document
-            .getElementById(
-                "saleBarang"
-            )
-            .value;
-
+    const barangId =
+        document.getElementById("saleBarang").value;
 
     const qty =
-        Number(
-            document
-                .getElementById(
-                    "saleQty"
-                )
-                .value
-        );
+        Number(document.getElementById("saleQty").value);
 
+    if (!barangId) {
 
-    if (!id) {
-
-        showToast(
-            "Pilih barang terlebih dahulu.",
-            "warning"
-        );
-
+        showToast("Pilih barang terlebih dahulu.");
         return;
-
     }
-
 
     if (qty <= 0) {
 
-        showToast(
-            "Jumlah harus lebih dari 0.",
-            "warning"
-        );
-
+        showToast("Jumlah harus lebih dari 0.");
         return;
-
     }
 
-
     const item =
-        barang.find(
-            b => b.id === id
-        );
-
+        barang.find(x => x.id === barangId);
 
     if (!item) return;
 
-
     const existing =
-        cart.find(
-            c => c.id === id
-        );
+        cart.find(x => x.barangId === barangId);
 
-
-    const currentQty =
+    const totalQty =
         existing
-            ? existing.qty
-            : 0;
+        ? existing.qty + qty
+        : qty;
 
-
-    if (
-        currentQty + qty >
-        Number(item.stok)
-    ) {
+    if (totalQty > Number(item.stok)) {
 
         showToast(
-            `Stok ${item.nama} hanya ${item.stok}.`,
-            "error"
+            `Stok ${item.nama} hanya ${item.stok}.`
         );
 
         return;
-
     }
-
 
     if (existing) {
 
@@ -2184,244 +1209,170 @@ function addToCart() {
 
         cart.push({
 
-            id: item.id,
+            barangId: item.id,
 
             nama: item.nama,
 
-            harga: Number(
-                item.hargaJual
-            ),
+            harga: Number(item.hargaJual),
 
-            qty: qty,
-
-            satuan: item.satuan,
-
-            gambar: item.gambar || ""
-
+            qty
         });
-
     }
-
-
-    document
-        .getElementById(
-            "saleQty"
-        )
-        .value = 1;
-
 
     renderCart();
 
+    document.getElementById("saleQty").value = 1;
 
-    showToast(
-        "Barang masuk ke keranjang.",
-        "success"
-    );
-
+    showToast("Barang ditambahkan ke keranjang.");
 }
 
 
 function renderCart() {
 
-    const tbody =
-        document.getElementById(
-            "cartBody"
+    const container =
+        document.getElementById("cartContainer");
+
+    const count =
+        document.getElementById("cartCount");
+
+    const totalElement =
+        document.getElementById("cartTotal");
+
+    if (!container) return;
+
+    const totalItems =
+        cart.reduce(
+            (sum, item) =>
+                sum + item.qty,
+            0
         );
-
-
-    if (!tbody) return;
-
-
-    if (cart.length === 0) {
-
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5" class="empty-state">
-                    Keranjang masih kosong.
-                </td>
-            </tr>
-        `;
-
-    } else {
-
-        tbody.innerHTML =
-            cart.map((item, index) => {
-
-                const subtotal =
-                    item.harga *
-                    item.qty;
-
-
-                return `
-                    <tr>
-
-                        <td>
-                            ${escapeHTML(item.nama)}
-                        </td>
-
-                        <td>
-                            ${rupiah(item.harga)}
-                        </td>
-
-                        <td>
-                            ${item.qty}
-                        </td>
-
-                        <td>
-                            ${rupiah(subtotal)}
-                        </td>
-
-                        <td>
-
-                            <button
-                                class="btn btn-small btn-danger"
-                                onclick="removeFromCart(${index})"
-                            >
-                                ×
-                            </button>
-
-                        </td>
-
-                    </tr>
-                `;
-
-            }).join("");
-
-    }
-
 
     const total =
         cart.reduce(
             (sum, item) =>
-                sum +
-                item.harga *
-                item.qty,
+                sum + item.qty * item.harga,
             0
         );
 
+    count.textContent =
+        `${totalItems} item`;
 
-    const totalQty =
-        cart.reduce(
-            (sum, item) =>
-                sum +
-                item.qty,
-            0
-        );
-
-
-    document
-        .getElementById(
-            "cartTotal"
-        )
-        .textContent =
+    totalElement.textContent =
         rupiah(total);
 
+    if (cart.length === 0) {
 
-    document
-        .getElementById(
-            "cartCount"
-        )
-        .textContent =
-        `${totalQty} item`;
+        container.innerHTML = `
+            <div class="empty-state">
+                Keranjang masih kosong.
+            </div>
+        `;
 
+        return;
+    }
+
+    container.innerHTML =
+        cart.map((item, index) => `
+
+            <div class="cart-item">
+
+                <div class="cart-item-info">
+
+                    <strong>
+                        ${escapeHTML(item.nama)}
+                    </strong>
+
+                    <span>
+                        ${item.qty} × ${rupiah(item.harga)}
+                    </span>
+
+                </div>
+
+                <div class="cart-item-right">
+
+                    <strong>
+                        ${rupiah(item.qty * item.harga)}
+                    </strong>
+
+                    <button
+                        class="remove-cart"
+                        onclick="removeFromCart(${index})">
+                        ×
+                    </button>
+
+                </div>
+
+            </div>
+
+        `).join("");
 }
 
 
 function removeFromCart(index) {
 
-    cart.splice(
-        index,
-        1
-    );
-
+    cart.splice(index, 1);
 
     renderCart();
-
 }
 
-
-/* =====================================================
-   CHECKOUT
-===================================================== */
 
 function checkout() {
 
     if (cart.length === 0) {
 
-        showToast(
-            "Keranjang masih kosong.",
-            "warning"
-        );
-
+        showToast("Keranjang masih kosong.");
         return;
-
     }
-
 
     const memberId =
-        document
-            .getElementById(
-                "saleMember"
-            )
-            .value;
+        document.getElementById("saleMember").value;
 
+    if (!memberId) {
 
-    let memberNama = "Umum";
-
-
-    if (memberId !== "UMUM") {
-
-        const selectedMember =
-            akun.find(
-                a =>
-                    a.id === memberId
-            );
-
-
-        if (selectedMember) {
-
-            memberNama =
-                selectedMember.nama;
-
-        }
-
+        showToast("Pilih Member terlebih dahulu.");
+        return;
     }
 
+    const member =
+        akun.find(x => x.id === memberId);
+
+    if (!member) {
+
+        showToast("Data Member tidak ditemukan.");
+        return;
+    }
+
+    for (const cartItem of cart) {
+
+        const item =
+            barang.find(x => x.id === cartItem.barangId);
+
+        if (!item || item.stok < cartItem.qty) {
+
+            showToast(
+                `Stok ${cartItem.nama} tidak mencukupi.`
+            );
+
+            return;
+        }
+    }
 
     const total =
         cart.reduce(
             (sum, item) =>
-                sum +
-                item.harga *
-                item.qty,
+                sum + item.qty * item.harga,
             0
         );
 
+    const trx = {
 
-    /*
-        Setelah checkout:
+        id: generateId("TRX"),
 
-        Status pembayaran SELALU
-        "Belum Bayar".
+        tanggal: new Date().toISOString(),
 
-        Admin nanti yang
-        mengkonfirmasi pembayaran.
-    */
+        memberId: member.id,
 
-
-    const transaction = {
-
-        id:
-            generateId("TRX"),
-
-        tanggal:
-            new Date().toISOString(),
-
-        memberId:
-            memberId,
-
-        memberNama:
-            memberNama,
+        memberNama: member.nama,
 
         jumlahItem:
             cart.reduce(
@@ -2430,160 +1381,84 @@ function checkout() {
                 0
             ),
 
-        total:
-            total,
+        total,
 
-        kasir:
-            currentUser.nama,
+        kasir: currentUser.nama,
 
-        paymentStatus:
-            "Belum Bayar",
+        paymentStatus: "Menunggu Pembayaran",
 
-        detail:
-            cart.map(item => ({
+        paymentConfirmedBy: null,
 
-                id:
-                    item.id,
+        paymentConfirmedAt: null,
 
-                nama:
-                    item.nama,
+        detail: cart.map(item => ({
 
-                harga:
-                    item.harga,
+            barangId: item.barangId,
 
-                qty:
-                    item.qty,
+            nama: item.nama,
 
-                subtotal:
-                    item.harga *
-                    item.qty
+            harga: item.harga,
 
-            }))
+            qty: item.qty,
 
+            subtotal: item.harga * item.qty
+        }))
     };
 
 
-    /*
-        Kurangi stok.
-    */
+    /* KURANGI STOK */
 
     cart.forEach(cartItem => {
 
         const item =
             barang.find(
-                b =>
-                    b.id ===
-                    cartItem.id
+                x => x.id === cartItem.barangId
             );
-
 
         if (item) {
 
-            item.stok -=
-                cartItem.qty;
-
+            item.stok -= cartItem.qty;
         }
-
     });
 
 
-    transaksi.push(
-        transaction
-    );
-
-
-    saveData();
-
+    transaksi.push(trx);
 
     cart = [];
 
-    paymentStatus =
-        "Belum Bayar";
-
-
-    document
-        .getElementById(
-            "saleMember"
-        )
-        .value =
-        "UMUM";
-
-
-    document
-        .getElementById(
-            "saleBarang"
-        )
-        .value =
-        "";
-
-
-    document
-        .getElementById(
-            "saleQty"
-        )
-        .value =
-        1;
-
-
-    document
-        .getElementById(
-            "saleProductPreview"
-        )
-        .classList.add(
-            "hidden"
-        );
-
+    saveData();
 
     updateAll();
 
+    document.getElementById("saleMember").value =
+        currentUser.role === "Member"
+        ? currentUser.id
+        : "";
+
+    document.getElementById("saleBarang").value = "";
+
+    document.getElementById("salePrice").textContent =
+        "Rp0";
+
+    document.getElementById("saleQty").value = 1;
 
     showToast(
-        `Checkout berhasil. ${transaction.id} menunggu konfirmasi Admin.`,
-        "success"
+        `Checkout berhasil. ${trx.id} menunggu konfirmasi pembayaran Admin.`
     );
-
 }
 
 
-/* =====================================================
-   RIWAYAT
-===================================================== */
+/* ================= PEMBAYARAN ================= */
 
-function renderRiwayat() {
+function renderPembayaran() {
 
-    const tbody =
-        document.getElementById(
-            "riwayatTableBody"
-        );
+    const table =
+        document.getElementById("paymentTable");
 
-
-    if (!tbody) return;
-
+    if (!table) return;
 
     let data =
         [...transaksi];
-
-
-    /*
-        Member hanya dapat melihat
-        transaksi yang terkait dirinya.
-
-        Admin dapat melihat semuanya.
-    */
-
-    if (
-        currentUser?.role === "Member"
-    ) {
-
-        data =
-            data.filter(
-                t =>
-                    t.memberId ===
-                    currentUser.id
-            );
-
-    }
-
 
     data.sort(
         (a, b) =>
@@ -2591,1143 +1466,652 @@ function renderRiwayat() {
             new Date(a.tanggal)
     );
 
-
     if (data.length === 0) {
 
-        tbody.innerHTML = `
+        table.innerHTML = `
             <tr>
-                <td colspan="8" class="empty-state">
+                <td colspan="7">
                     Belum ada transaksi.
                 </td>
             </tr>
         `;
 
         return;
-
     }
 
+    table.innerHTML =
+        data.map(trx => {
 
-    tbody.innerHTML =
-        data.map(t => {
+            let action = "";
 
-            const adminActions =
-                currentUser?.role === "Admin"
-                    ? `
+            if (
+                trx.paymentStatus ===
+                "Menunggu Pembayaran"
+            ) {
 
-                        ${
-                            t.paymentStatus ===
-                            "Belum Bayar"
+                action = `
+                    <button
+                        class="btn-small btn-pay"
+                        onclick="confirmPayment('${trx.id}')">
+                        ✅ Sudah Bayar
+                    </button>
+                `;
 
-                                ? `
-                                    <button
-                                        class="payment-button payment-confirm"
-                                        onclick="confirmPayment('${t.id}')"
-                                    >
-                                        ✅ Sudah Bayar
-                                    </button>
-                                  `
+            } else {
 
-                                : `
-                                    <button
-                                        class="payment-button payment-cancel"
-                                        onclick="setUnpaid('${t.id}')"
-                                    >
-                                        ❌ Belum Bayar
-                                    </button>
-                                  `
-                        }
-
-                      `
-                    : "";
-
+                action = `
+                    <span class="badge badge-success">
+                        Pembayaran Selesai
+                    </span>
+                `;
+            }
 
             return `
+
                 <tr>
 
                     <td>
-                        <strong>
-                            ${escapeHTML(t.id)}
-                        </strong>
+                        <strong>${trx.id}</strong>
                     </td>
 
                     <td>
-                        ${formatDateTime(t.tanggal)}
+                        ${escapeHTML(trx.memberNama)}
                     </td>
 
                     <td>
-                        ${escapeHTML(t.memberNama)}
+                        ${formatDate(trx.tanggal)}
                     </td>
 
                     <td>
-                        ${t.jumlahItem}
+                        ${trx.jumlahItem}
                     </td>
 
                     <td>
                         <strong>
-                            ${rupiah(t.total)}
+                            ${rupiah(trx.total)}
                         </strong>
                     </td>
 
                     <td>
-                        ${escapeHTML(t.kasir)}
+                        ${getPaymentBadge(trx.paymentStatus)}
                     </td>
 
                     <td>
-                        ${getPaymentBadge(t.paymentStatus)}
-                    </td>
-
-                    <td>
-
-                        <button
-                            class="btn btn-small btn-outline"
-                            onclick="viewTransaction('${t.id}')"
-                        >
-                            Detail
-                        </button>
-
-                        ${adminActions}
-
+                        ${action}
                     </td>
 
                 </tr>
+
             `;
-
         }).join("");
+}
 
+
+function confirmPayment(transactionId) {
+
+    if (currentUser?.role !== "Admin") {
+
+        showToast(
+            "Hanya Admin yang dapat mengonfirmasi pembayaran."
+        );
+
+        return;
+    }
+
+    const trx =
+        transaksi.find(
+            item => item.id === transactionId
+        );
+
+    if (!trx) return;
+
+    if (trx.paymentStatus === "Lunas") {
+
+        showToast("Pembayaran sudah dikonfirmasi.");
+        return;
+    }
+
+    const yakin =
+        confirm(
+            `Konfirmasi bahwa transaksi ${trx.id} sudah dibayar?`
+        );
+
+    if (!yakin) return;
+
+    trx.paymentStatus = "Lunas";
+
+    trx.paymentConfirmedBy =
+        currentUser.nama;
+
+    trx.paymentConfirmedAt =
+        new Date().toISOString();
+
+    saveData();
+
+    updateAll();
+
+    showToast(
+        `Pembayaran ${trx.id} berhasil dikonfirmasi.`
+    );
 }
 
 
 function getPaymentBadge(status) {
 
-    if (status === "Sudah Bayar") {
+    if (status === "Lunas") {
 
         return `
-            <span class="payment-status payment-paid">
-                ✅ Sudah Bayar
+            <span class="badge badge-success">
+                Lunas
             </span>
         `;
-
     }
-
 
     return `
-        <span class="payment-status payment-unpaid">
-            ❌ Belum Bayar
+        <span class="badge badge-warning">
+            Menunggu Pembayaran
         </span>
     `;
-
 }
 
 
-/* =====================================================
-   ADMIN PAYMENT CONFIRMATION
-===================================================== */
+/* ================= RIWAYAT ================= */
 
-function confirmPayment(id) {
+function renderRiwayat() {
 
-    if (currentUser?.role !== "Admin") {
+    const table =
+        document.getElementById("riwayatTable");
 
-        showToast(
-            "Hanya Admin yang dapat mengonfirmasi pembayaran.",
-            "error"
-        );
+    if (!table) return;
 
-        return;
+    let data =
+        [...transaksi];
 
+    if (currentUser.role !== "Admin") {
+
+        data =
+            data.filter(
+                item =>
+                    item.memberId === currentUser.id
+            );
     }
 
-
-    const transaction =
-        transaksi.find(
-            t =>
-                t.id === id
-        );
-
-
-    if (!transaction) return;
-
-
-    transaction.paymentStatus =
-        "Sudah Bayar";
-
-
-    saveData();
-
-    renderRiwayat();
-
-    renderRecentTransactions();
-
-
-    showToast(
-        `Pembayaran ${id} berhasil dikonfirmasi.`,
-        "success"
+    data.sort(
+        (a, b) =>
+            new Date(b.tanggal) -
+            new Date(a.tanggal)
     );
 
-}
+    if (data.length === 0) {
 
-
-function setUnpaid(id) {
-
-    if (currentUser?.role !== "Admin") {
-
-        showToast(
-            "Hanya Admin yang dapat mengubah pembayaran.",
-            "error"
-        );
-
-        return;
-
-    }
-
-
-    const transaction =
-        transaksi.find(
-            t =>
-                t.id === id
-        );
-
-
-    if (!transaction) return;
-
-
-    transaction.paymentStatus =
-        "Belum Bayar";
-
-
-    saveData();
-
-    renderRiwayat();
-
-    renderRecentTransactions();
-
-
-    showToast(
-        `Status ${id} dikembalikan menjadi Belum Bayar.`,
-        "warning"
-    );
-
-}
-
-
-/* =====================================================
-   TRANSACTION DETAIL
-===================================================== */
-
-function viewTransaction(id) {
-
-    const transaction =
-        transaksi.find(
-            t =>
-                t.id === id
-        );
-
-
-    if (!transaction) return;
-
-
-    document
-        .getElementById(
-            "transactionModalSubtitle"
-        )
-        .textContent =
-        transaction.id;
-
-
-    const detail =
-        document.getElementById(
-            "transactionDetail"
-        );
-
-
-    detail.innerHTML = `
-
-        <div class="transaction-summary">
-
-            <div class="transaction-summary-item">
-                <span>Pembeli</span>
-                <strong>
-                    ${escapeHTML(transaction.memberNama)}
-                </strong>
-            </div>
-
-            <div class="transaction-summary-item">
-                <span>Total</span>
-                <strong>
-                    ${rupiah(transaction.total)}
-                </strong>
-            </div>
-
-            <div class="transaction-summary-item">
-                <span>Status</span>
-                <strong>
-                    ${getPaymentBadge(transaction.paymentStatus)}
-                </strong>
-            </div>
-
-        </div>
-
-
-        <div class="table-wrapper">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-                        <th>Barang</th>
-                        <th>Harga</th>
-                        <th>Jumlah</th>
-                        <th>Subtotal</th>
-                    </tr>
-
-                </thead>
-
-                <tbody>
-
-                    ${
-                        transaction.detail
-                            .map(item => `
-
-                                <tr>
-
-                                    <td>
-                                        ${escapeHTML(item.nama)}
-                                    </td>
-
-                                    <td>
-                                        ${rupiah(item.harga)}
-                                    </td>
-
-                                    <td>
-                                        ${item.qty}
-                                    </td>
-
-                                    <td>
-                                        ${rupiah(item.subtotal)}
-                                    </td>
-
-                                </tr>
-
-                            `)
-                            .join("")
-                    }
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-    `;
-
-
-    openModal(
-        "transactionModal"
-    );
-
-}
-
-
-/* =====================================================
-   DATA MEMBER
-===================================================== */
-
-function renderMember() {
-
-    const tbody =
-        document.getElementById(
-            "memberTableBody"
-        );
-
-
-    if (!tbody) return;
-
-
-    /*
-        Member dihitung langsung
-        dari akun yang memiliki role Member.
-    */
-
-    const members =
-        akun.filter(
-            a =>
-                a.role === "Member"
-        );
-
-
-    document
-        .getElementById(
-            "totalMember"
-        )
-        .textContent =
-        members.length;
-
-
-    if (members.length === 0) {
-
-        tbody.innerHTML = `
+        table.innerHTML = `
             <tr>
-                <td colspan="6" class="empty-state">
-                    Belum ada member terdaftar.
+                <td colspan="6">
+                    Belum ada transaksi.
                 </td>
             </tr>
         `;
 
         return;
+    }
 
+    table.innerHTML =
+        data.map(trx => `
+
+            <tr>
+
+                <td>
+                    <strong>${trx.id}</strong>
+                </td>
+
+                <td>
+                    ${escapeHTML(trx.memberNama)}
+                </td>
+
+                <td>
+                    ${formatDate(trx.tanggal)}
+                </td>
+
+                <td>
+                    ${trx.jumlahItem}
+                </td>
+
+                <td>
+                    <strong>
+                        ${rupiah(trx.total)}
+                    </strong>
+                </td>
+
+                <td>
+                    ${getPaymentBadge(trx.paymentStatus)}
+                </td>
+
+            </tr>
+
+        `).join("");
+}
+
+
+/* ================= DATA MEMBER ================= */
+
+function renderMember() {
+
+    const table =
+        document.getElementById("memberTable");
+
+    const head =
+        document.getElementById("memberTableHead");
+
+    const total =
+        document.getElementById("totalMember");
+
+    if (!table || !head || !total) return;
+
+
+    const memberCount =
+        akun.filter(
+            user => user.role === "Member"
+        ).length;
+
+    total.textContent =
+        memberCount;
+
+
+    let data =
+        [...akun];
+
+    const search =
+        document.getElementById("memberSearch")
+        ?.value
+        .trim()
+        .toLowerCase() || "";
+
+
+    if (search) {
+
+        data =
+            data.filter(user =>
+
+                user.id.toLowerCase().includes(search) ||
+
+                user.nama.toLowerCase().includes(search) ||
+
+                user.username.toLowerCase().includes(search) ||
+
+                user.role.toLowerCase().includes(search)
+            );
     }
 
 
-    tbody.innerHTML =
-        members.map(memberItem => {
+    /*
+       Password hanya ditampilkan kepada Admin.
+    */
 
-            return `
+    if (currentUser.role === "Admin") {
+
+        head.innerHTML = `
+            <tr>
+                <th>ID Member</th>
+                <th>Nama</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Password</th>
+                <th>Tanggal Daftar</th>
+            </tr>
+        `;
+
+        table.innerHTML =
+            data.map(user => `
+
                 <tr>
 
-                    <td>
-                        ${escapeHTML(memberItem.id)}
-                    </td>
+                    <td>${user.id}</td>
 
                     <td>
                         <strong>
-                            ${escapeHTML(memberItem.nama)}
+                            ${escapeHTML(user.nama)}
                         </strong>
                     </td>
 
                     <td>
-                        ${escapeHTML(memberItem.username)}
+                        ${escapeHTML(user.username)}
                     </td>
 
                     <td>
-                        <span class="badge badge-info">
-                            Member
-                        </span>
+                        ${getRoleBadge(user.role)}
                     </td>
 
                     <td>
-
-                        <div class="password-cell">
-
-                            <span
-                                class="password-value"
-                                id="memberPassword-${memberItem.id}"
-                            >
-                                ••••••••
-                            </span>
-
-                            <button
-                                class="password-view-button"
-                                onclick="toggleMemberPassword('${memberItem.id}')"
-                                title="Lihat password"
-                            >
-                                👁️
-                            </button>
-
-                        </div>
-
+                        ${escapeHTML(user.password)}
                     </td>
 
                     <td>
-                        ${formatDate(memberItem.tanggalDaftar)}
+                        ${formatDate(user.tanggalDaftar)}
                     </td>
 
                 </tr>
-            `;
 
-        }).join("");
-
-}
-
-
-/* =====================================================
-   SHOW MEMBER PASSWORD
-===================================================== */
-
-function toggleMemberPassword(id) {
-
-    if (currentUser?.role !== "Admin") {
-
-        showToast(
-            "Password hanya dapat dilihat Admin.",
-            "error"
-        );
-
-        return;
-
-    }
-
-
-    const memberItem =
-        akun.find(
-            a =>
-                a.id === id
-        );
-
-
-    if (!memberItem) return;
-
-
-    const element =
-        document.getElementById(
-            `memberPassword-${id}`
-        );
-
-
-    if (
-        element.textContent ===
-        "••••••••"
-    ) {
-
-        element.textContent =
-            memberItem.password;
+            `).join("");
 
     } else {
 
-        element.textContent =
-            "••••••••";
-
-    }
-
-}
-
-
-/* =====================================================
-   KELOLA AKUN
-===================================================== */
-
-function renderAkun() {
-
-    const tbody =
-        document.getElementById(
-            "akunTableBody"
-        );
-
-
-    if (!tbody) return;
-
-
-    if (currentUser?.role !== "Admin") {
-
-        tbody.innerHTML = "";
-
-        return;
-
-    }
-
-
-    if (akun.length === 0) {
-
-        tbody.innerHTML = `
+        head.innerHTML = `
             <tr>
-                <td colspan="6" class="empty-state">
-                    Belum ada akun.
-                </td>
+                <th>ID Member</th>
+                <th>Nama</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Tanggal Daftar</th>
             </tr>
         `;
 
-        return;
+        table.innerHTML =
+            data.map(user => `
 
-    }
-
-
-    tbody.innerHTML =
-        akun.map(account => {
-
-            const isCurrent =
-                currentUser.id ===
-                account.id;
-
-
-            return `
                 <tr>
 
+                    <td>${user.id}</td>
+
                     <td>
-                        ${escapeHTML(account.id)}
+                        <strong>
+                            ${escapeHTML(user.nama)}
+                        </strong>
                     </td>
 
                     <td>
-                        ${escapeHTML(account.nama)}
+                        ${escapeHTML(user.username)}
                     </td>
 
                     <td>
-                        ${escapeHTML(account.username)}
+                        ${getRoleBadge(user.role)}
                     </td>
 
                     <td>
-
-                        ${
-                            account.role === "Admin"
-
-                                ? `
-                                    <span class="badge badge-purple">
-                                        Admin
-                                    </span>
-                                  `
-
-                                : `
-                                    <span class="badge badge-info">
-                                        Member
-                                    </span>
-                                  `
-                        }
-
-                    </td>
-
-                    <td>
-                        ${formatDate(account.tanggalDaftar)}
-                    </td>
-
-                    <td>
-
-                        <button
-                            class="btn btn-small btn-outline"
-                            onclick="openAkunModal('${account.id}')"
-                        >
-                            ✏️ Edit
-                        </button>
-
-                        ${
-                            !isCurrent &&
-                            account.username !== "admin"
-
-                                ? `
-                                    <button
-                                        class="btn btn-small btn-danger"
-                                        onclick="deleteAkun('${account.id}')"
-                                    >
-                                        🗑️
-                                    </button>
-                                  `
-
-                                : ""
-                        }
-
+                        ${formatDate(user.tanggalDaftar)}
                     </td>
 
                 </tr>
-            `;
 
-        }).join("");
+            `).join("");
+    }
 
+
+    if (data.length === 0) {
+
+        const colspan =
+            currentUser.role === "Admin" ? 6 : 5;
+
+        table.innerHTML = `
+            <tr>
+                <td colspan="${colspan}">
+                    Data tidak ditemukan.
+                </td>
+            </tr>
+        `;
+    }
 }
 
 
-function openAkunModal(id = null) {
+function getRoleBadge(role) {
 
-    if (currentUser?.role !== "Admin") {
+    if (role === "Admin") {
 
-        showToast(
-            "Hanya Admin yang dapat mengelola akun.",
-            "error"
-        );
-
-        return;
-
+        return `
+            <span class="badge badge-blue">
+                Admin
+            </span>
+        `;
     }
 
-
-    const form =
-        document.getElementById(
-            "akunForm"
-        );
-
-
-    form.reset();
-
-
-    document
-        .getElementById(
-            "akunEditId"
-        )
-        .value = "";
-
-
-    document
-        .getElementById(
-            "akunModalTitle"
-        )
-        .textContent =
-        "Tambah Akun";
-
-
-    document
-        .getElementById(
-            "akunRole"
-        )
-        .value =
-        "Member";
-
-
-    if (id) {
-
-        const account =
-            akun.find(
-                a =>
-                    a.id === id
-            );
-
-
-        if (!account) return;
-
-
-        document
-            .getElementById(
-                "akunEditId"
-            )
-            .value =
-            account.id;
-
-
-        document
-            .getElementById(
-                "akunNama"
-            )
-            .value =
-            account.nama;
-
-
-        document
-            .getElementById(
-                "akunUsername"
-            )
-            .value =
-            account.username;
-
-
-        document
-            .getElementById(
-                "akunRole"
-            )
-            .value =
-            account.role;
-
-
-        document
-            .getElementById(
-                "akunModalTitle"
-            )
-            .textContent =
-            "Edit Akun";
-
-
-        /*
-            Admin tidak dapat
-            menurunkan role dirinya sendiri.
-        */
-
-        const roleSelect =
-            document.getElementById(
-                "akunRole"
-            );
-
-
-        if (
-            account.id ===
-            currentUser.id
-        ) {
-
-            roleSelect.disabled =
-                true;
-
-        } else {
-
-            roleSelect.disabled =
-                false;
-
-        }
-
-    } else {
-
-        document
-            .getElementById(
-                "akunRole"
-            )
-            .disabled =
-            false;
-
-    }
-
-
-    openModal(
-        "akunModal"
-    );
-
+    return `
+        <span class="badge badge-success">
+            Member
+        </span>
+    `;
 }
 
 
-function saveAkun() {
+/* ================= KELOLA AKUN ================= */
 
-    if (currentUser?.role !== "Admin") {
+function renderAkun() {
 
-        showToast(
-            "Hanya Admin yang dapat mengubah akun.",
-            "error"
-        );
+    const table =
+        document.getElementById("akunTable");
 
-        return;
+    if (!table) return;
 
-    }
+    table.innerHTML =
+        akun.map(user => `
+
+            <tr>
+
+                <td>${user.id}</td>
+
+                <td>
+                    <strong>
+                        ${escapeHTML(user.nama)}
+                    </strong>
+                </td>
+
+                <td>
+                    ${escapeHTML(user.username)}
+                </td>
+
+                <td>
+                    ${getRoleBadge(user.role)}
+                </td>
+
+                <td>
+                    ${formatDate(user.tanggalDaftar)}
+                </td>
+
+                <td>
+
+                    <div class="action-buttons">
+
+                        <button
+                            class="btn-small btn-edit"
+                            onclick="changeRole('${user.id}')">
+                            Ubah Role
+                        </button>
+
+                        ${
+                            user.username !== "admin"
+                            ?
+                            `
+                            <button
+                                class="btn-small btn-delete"
+                                onclick="deleteAkun('${user.id}')">
+                                Hapus
+                            </button>
+                            `
+                            :
+                            ""
+                        }
+
+                    </div>
+
+                </td>
+
+            </tr>
+
+        `).join("");
+}
 
 
-    const id =
-        document
-            .getElementById(
-                "akunEditId"
-            )
-            .value;
+function openAkunModal() {
 
+    if (currentUser?.role !== "Admin") return;
+
+    document.getElementById("akunForm").reset();
+
+    openModal("akunModal");
+}
+
+
+function saveAkun(event) {
+
+    event.preventDefault();
+
+    if (currentUser?.role !== "Admin") return;
 
     const nama =
-        document
-            .getElementById(
-                "akunNama"
-            )
-            .value
-            .trim();
-
+        document.getElementById("akunNama").value.trim();
 
     const username =
-        document
-            .getElementById(
-                "akunUsername"
-            )
-            .value
-            .trim();
-
+        document.getElementById("akunUsername").value.trim();
 
     const password =
-        document
-            .getElementById(
-                "akunPassword"
-            )
-            .value;
+        document.getElementById("akunPassword").value;
 
-
-    const role =
-        document
-            .getElementById(
-                "akunRole"
-            )
-            .value;
-
-
-    if (!nama || !username) {
-
-        showToast(
-            "Nama dan username harus diisi.",
-            "warning"
-        );
-
-        return;
-
-    }
-
-
-    const duplicate =
+    if (
         akun.some(
-            a =>
-                a.username.toLowerCase() ===
+            user =>
+                user.username.toLowerCase() ===
                 username.toLowerCase()
-                &&
-                a.id !== id
-        );
+        )
+    ) {
 
-
-    if (duplicate) {
-
-        showToast(
-            "Username sudah digunakan.",
-            "error"
-        );
-
+        showToast("Username sudah digunakan.");
         return;
-
     }
 
+    akun.push({
 
-    if (id) {
+        id: generateId("USR"),
 
-        const account =
-            akun.find(
-                a =>
-                    a.id === id
-            );
+        nama,
 
+        username,
 
-        if (!account) return;
+        password,
 
+        role: "Member",
 
-        /*
-            Jangan izinkan admin
-            mengubah role dirinya sendiri.
-        */
-
-        if (
-            account.id ===
-            currentUser.id
-            &&
-            role !== account.role
-        ) {
-
-            showToast(
-                "Anda tidak dapat mengubah role akun sendiri.",
-                "error"
-            );
-
-            return;
-
-        }
-
-
-        account.nama =
-            nama;
-
-
-        account.username =
-            username;
-
-
-        if (password) {
-
-            if (password.length < 6) {
-
-                showToast(
-                    "Password minimal 6 karakter.",
-                    "warning"
-                );
-
-                return;
-
-            }
-
-            account.password =
-                password;
-
-        }
-
-
-        account.role =
-            role;
-
-
-        /*
-            Jika yang diedit
-            adalah user yang sedang login,
-            update currentUser.
-        */
-
-        if (
-            account.id ===
-            currentUser.id
-        ) {
-
-            currentUser.nama =
-                account.nama;
-
-            currentUser.username =
-                account.username;
-
-            currentUser.role =
-                account.role;
-
-        }
-
-
-        showToast(
-            "Akun berhasil diperbarui.",
-            "success"
-        );
-
-    } else {
-
-        if (
-            !password ||
-            password.length < 6
-        ) {
-
-            showToast(
-                "Password minimal 6 karakter.",
-                "warning"
-            );
-
-            return;
-
-        }
-
-
-        /*
-            Akun baru dari Kelola Akun
-            juga default Member.
-            Admin dapat mengubahnya
-            setelah akun dibuat.
-        */
-
-        akun.push({
-
-            id:
-                generateId("USR"),
-
-            nama,
-
-            username,
-
-            password,
-
-            role: "Member",
-
-            tanggalDaftar:
-                new Date().toISOString()
-
-        });
-
-
-        showToast(
-            "Akun baru berhasil dibuat sebagai Member.",
-            "success"
-        );
-
-    }
-
+        tanggalDaftar:
+            new Date().toISOString()
+    });
 
     saveData();
 
     closeModal("akunModal");
 
-    updateUserInterface();
-
     updateAll();
 
+    showToast("Akun Member berhasil dibuat.");
 }
 
 
-/* =====================================================
-   DELETE ACCOUNT
-===================================================== */
+function changeRole(id) {
 
-function deleteAkun(id) {
+    if (currentUser?.role !== "Admin") return;
 
-    if (currentUser?.role !== "Admin") {
+    const user =
+        akun.find(item => item.id === id);
+
+    if (!user) return;
+
+    if (user.id === currentUser.id) {
 
         showToast(
-            "Hanya Admin yang dapat menghapus akun.",
-            "error"
+            "Anda tidak dapat mengubah role akun sendiri."
         );
 
         return;
-
     }
 
+    const newRole =
+        user.role === "Admin"
+        ? "Member"
+        : "Admin";
 
-    const account =
-        akun.find(
-            a =>
-                a.id === id
+    const yakin =
+        confirm(
+            `Ubah role ${user.nama} menjadi ${newRole}?`
         );
 
-
-    if (!account) return;
-
-
-    if (
-        account.username ===
-        "admin"
-    ) {
-
-        showToast(
-            "Akun admin utama tidak dapat dihapus.",
-            "error"
-        );
-
-        return;
-
-    }
-
-
-    if (
-        account.id ===
-        currentUser.id
-    ) {
-
-        showToast(
-            "Akun yang sedang digunakan tidak dapat dihapus.",
-            "error"
-        );
-
-        return;
-
-    }
-
+    if (!yakin) return;
 
     /*
-        Jangan menghapus Admin terakhir.
+       Jangan sampai semua Admin dihapus.
     */
 
     if (
-        account.role === "Admin"
+        user.role === "Admin" &&
+        akun.filter(x => x.role === "Admin").length <= 1
     ) {
 
-        const adminCount =
-            akun.filter(
-                a =>
-                    a.role === "Admin"
-            ).length;
+        showToast(
+            "Minimal harus ada satu Admin."
+        );
 
-
-        if (adminCount <= 1) {
-
-            showToast(
-                "Tidak dapat menghapus Admin terakhir.",
-                "error"
-            );
-
-            return;
-
-        }
-
+        return;
     }
 
-
-    const confirmDelete =
-        confirm(
-            `Hapus akun ${account.username}?`
-        );
-
-
-    if (!confirmDelete) return;
-
-
-    akun =
-        akun.filter(
-            a =>
-                a.id !== id
-        );
-
+    user.role = newRole;
 
     saveData();
 
     updateAll();
 
-
     showToast(
-        "Akun berhasil dihapus.",
-        "success"
+        `Role ${user.nama} menjadi ${newRole}.`
     );
-
 }
 
 
-/* =====================================================
-   MODAL
-===================================================== */
+function deleteAkun(id) {
+
+    if (currentUser?.role !== "Admin") return;
+
+    const user =
+        akun.find(item => item.id === id);
+
+    if (!user) return;
+
+    if (user.username === "admin") {
+
+        showToast(
+            "Akun Admin utama tidak dapat dihapus."
+        );
+
+        return;
+    }
+
+    if (user.id === currentUser.id) {
+
+        showToast(
+            "Anda tidak dapat menghapus akun sendiri."
+        );
+
+        return;
+    }
+
+    const yakin =
+        confirm(
+            `Hapus akun ${user.nama}?`
+        );
+
+    if (!yakin) return;
+
+    akun =
+        akun.filter(item => item.id !== id);
+
+    saveData();
+
+    updateAll();
+
+    showToast("Akun berhasil dihapus.");
+}
+
+
+/* ================= MODAL ================= */
 
 function openModal(id) {
 
     document
         .getElementById(id)
-        .classList.remove(
-            "hidden"
-        );
-
+        .classList.add("show");
 }
 
 
@@ -3735,89 +2119,62 @@ function closeModal(id) {
 
     document
         .getElementById(id)
-        .classList.add(
-            "hidden"
-        );
-
+        .classList.remove("show");
 }
 
 
-/* =====================================================
-   DATE
-===================================================== */
+window.addEventListener("click", event => {
 
-function updateDate() {
+    if (event.target.classList.contains("modal")) {
 
-    const element =
-        document.getElementById(
-            "currentDate"
-        );
+        event.target.classList.remove("show");
+    }
+});
 
 
-    if (!element) return;
+/* ================= THEME ================= */
 
+function applyTheme() {
 
-    const now =
-        new Date();
+    document.body.classList.toggle(
+        "dark",
+        theme === "dark"
+    );
 
+    document.getElementById("themeToggle").textContent =
+        theme === "dark" ? "☀️" : "🌙";
 
-    element.textContent =
-        now.toLocaleDateString(
-            "id-ID",
-            {
-                weekday: "long",
-                day: "numeric",
-                month: "long",
-                year: "numeric"
-            }
-        );
-
+    localStorage.setItem(
+        "tokotokand_theme",
+        theme
+    );
 }
 
 
-function formatDate(date) {
+function toggleTheme() {
 
-    if (!date) return "-";
+    theme =
+        theme === "dark"
+        ? "light"
+        : "dark";
 
-
-    return new Date(date)
-        .toLocaleDateString(
-            "id-ID",
-            {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric"
-            }
-        );
-
+    applyTheme();
 }
 
 
-function formatDateTime(date) {
+/* ================= UTILITIES ================= */
 
-    if (!date) return "-";
+function generateId(prefix) {
 
-
-    return new Date(date)
-        .toLocaleString(
-            "id-ID",
-            {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit"
-            }
-        );
-
+    return (
+        prefix +
+        Date.now().toString().slice(-6) +
+        Math.floor(Math.random() * 100)
+    );
 }
 
 
-/* =====================================================
-   RUPIAH
-===================================================== */
-
-function rupiah(number) {
+function rupiah(value) {
 
     return new Intl.NumberFormat(
         "id-ID",
@@ -3826,255 +2183,47 @@ function rupiah(number) {
             currency: "IDR",
             maximumFractionDigits: 0
         }
-    ).format(
-        Number(number) || 0
-    );
-
+    ).format(Number(value) || 0);
 }
 
 
-/* =====================================================
-   GENERATE ID
-===================================================== */
+function formatDate(date) {
 
-function generateId(prefix) {
+    if (!date) return "-";
 
-    let max = 0;
-
-
-    const allData = [
-
-        ...akun,
-
-        ...barang,
-
-        ...transaksi
-
-    ];
-
-
-    allData.forEach(item => {
-
-        if (!item.id) return;
-
-
-        if (
-            item.id.startsWith(prefix)
-        ) {
-
-            const number =
-                parseInt(
-                    item.id
-                        .replace(prefix, ""),
-                    10
-                );
-
-
-            if (
-                !isNaN(number) &&
-                number > max
-            ) {
-
-                max = number;
-
-            }
-
+    return new Intl.DateTimeFormat(
+        "id-ID",
+        {
+            dateStyle: "medium",
+            timeStyle: "short"
         }
-
-    });
-
-
-    return (
-        prefix +
-        String(max + 1)
-            .padStart(3, "0")
-    );
-
+    ).format(new Date(date));
 }
 
-
-/* =====================================================
-   ESCAPE HTML
-===================================================== */
 
 function escapeHTML(value) {
 
-    if (
-        value === null ||
-        value === undefined
-    ) {
-
-        return "";
-
-    }
-
-
-    return String(value)
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 
-/* =====================================================
-   TOAST
-===================================================== */
-
-function showToast(
-    message,
-    type = "success"
-) {
-
-    const container =
-        document.getElementById(
-            "toastContainer"
-        );
-
+function showToast(message) {
 
     const toast =
-        document.createElement(
-            "div"
-        );
+        document.getElementById("toast");
 
+    toast.textContent = message;
 
-    toast.className =
-        `toast ${type}`;
+    toast.classList.add("show");
 
+    setTimeout(() => {
 
-    toast.textContent =
-        message;
+        toast.classList.remove("show");
 
-
-    container.appendChild(
-        toast
-    );
-
-
-    setTimeout(
-        () => {
-
-            toast.remove();
-
-        },
-        3500
-    );
-
+    }, 3000);
 }
-
-
-/* =====================================================
-   THEME
-===================================================== */
-
-function applyTheme() {
-
-    if (
-        theme === "dark"
-    ) {
-
-        document.body.classList.add(
-            "dark"
-        );
-
-
-        document
-            .getElementById(
-                "themeIcon"
-            )
-            .textContent =
-            "☀️";
-
-
-        document
-            .getElementById(
-                "themeText"
-            )
-            .textContent =
-            "Mode Terang";
-
-    } else {
-
-        document.body.classList.remove(
-            "dark"
-        );
-
-
-        document
-            .getElementById(
-                "themeIcon"
-            )
-            .textContent =
-            "🌙";
-
-
-        document
-            .getElementById(
-                "themeText"
-            )
-            .textContent =
-            "Mode Gelap";
-
-    }
-
-
-    localStorage.setItem(
-        STORAGE.theme,
-        theme
-    );
-
-}
-
-
-function toggleTheme() {
-
-    theme =
-        theme === "dark"
-            ? "light"
-            : "dark";
-
-
-    applyTheme();
-
-}
-
-
-/* =====================================================
-   CLOSE MODAL WHEN CLICKING OUTSIDE
-===================================================== */
-
-document.addEventListener(
-    "click",
-    function (event) {
-
-        if (
-            event.target.classList.contains(
-                "modal"
-            )
-        ) {
-
-            event.target.classList.add(
-                "hidden"
-            );
-
-        }
-
-    }
-);
