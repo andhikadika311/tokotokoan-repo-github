@@ -1,45 +1,39 @@
 /* =====================================================
-   ANSTORE
-   Sistem Manajemen Toko
-   ===================================================== */
+   TOKOTOKOAND
+   Store Management System
+===================================================== */
 
 
 /* =====================================================
-   DATA LOCAL STORAGE
-   ===================================================== */
+   DATA
+===================================================== */
 
-// AKUN
-let akun = JSON.parse(
-    localStorage.getItem("anstore_akun")
-) || [];
+let akun =
+    JSON.parse(localStorage.getItem("tokotokand_akun")) || [];
 
-// BARANG
-let barang = JSON.parse(
-    localStorage.getItem("anstore_barang")
-) || [];
+let barang =
+    JSON.parse(localStorage.getItem("tokotokand_barang")) || [];
 
-// MEMBER TOKO
-let member = JSON.parse(
-    localStorage.getItem("anstore_member")
-) || [];
+let transaksi =
+    JSON.parse(localStorage.getItem("tokotokand_transaksi")) || [];
 
-// TRANSAKSI
-let transaksi = JSON.parse(
-    localStorage.getItem("anstore_transaksi")
-) || [];
-
-// KERANJANG
 let cart = [];
 
-// USER YANG SEDANG LOGIN
-let currentUser = JSON.parse(
-    localStorage.getItem("anstore_current_user")
-) || null;
+let currentUser =
+    JSON.parse(
+        localStorage.getItem("tokotokand_current_user")
+    ) || null;
+
+let selectedPaymentStatus = true;
+
+let currentTransactionId = null;
+
+let editingBarangImage = "";
 
 
 /* =====================================================
-   AKUN ADMIN DEFAULT
-   ===================================================== */
+   DEFAULT ADMIN
+===================================================== */
 
 if (akun.length === 0) {
 
@@ -48,7 +42,8 @@ if (akun.length === 0) {
         nama: "Administrator",
         username: "admin",
         password: "admin123",
-        role: "Admin"
+        role: "Admin",
+        tanggalDaftar: new Date().toISOString()
     });
 
     saveData();
@@ -56,104 +51,98 @@ if (akun.length === 0) {
 
 
 /* =====================================================
-   DOM READY
-   ===================================================== */
-
-document.addEventListener("DOMContentLoaded", function () {
-
-    setupNavigation();
-
-    if (currentUser) {
-        showApp();
-    }
-
-    updateAll();
-
-});
-
-
-/* =====================================================
-   LOCAL STORAGE
-   ===================================================== */
+   SAVE DATA
+===================================================== */
 
 function saveData() {
 
     localStorage.setItem(
-        "anstore_akun",
+        "tokotokand_akun",
         JSON.stringify(akun)
     );
 
     localStorage.setItem(
-        "anstore_barang",
+        "tokotokand_barang",
         JSON.stringify(barang)
     );
 
     localStorage.setItem(
-        "anstore_member",
-        JSON.stringify(member)
-    );
-
-    localStorage.setItem(
-        "anstore_transaksi",
+        "tokotokand_transaksi",
         JSON.stringify(transaksi)
     );
 }
 
 
 /* =====================================================
-   LOGIN
-   ===================================================== */
+   INITIALIZATION
+===================================================== */
 
-function login() {
+document.addEventListener("DOMContentLoaded", () => {
 
-    const username =
-        document.getElementById("loginUsername").value.trim();
+    loadTheme();
 
-    const password =
-        document.getElementById("loginPassword").value;
+    document.getElementById("topbarDate").textContent =
+        new Date().toLocaleDateString("id-ID", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+            year: "numeric"
+        });
 
-    if (!username || !password) {
-
-        showToast("Username dan password wajib diisi.");
-
-        return;
+    if (currentUser) {
+        showApp();
     }
 
+});
 
-    const user = akun.find(function (item) {
 
-        return (
-            item.username.toLowerCase() === username.toLowerCase() &&
+/* =====================================================
+   LOGIN
+===================================================== */
+
+function login(event) {
+
+    event.preventDefault();
+
+    const username =
+        document.getElementById("loginUsername")
+            .value
+            .trim();
+
+    const password =
+        document.getElementById("loginPassword")
+            .value;
+
+    const user = akun.find(
+        item =>
+            item.username.toLowerCase() ===
+                username.toLowerCase()
+            &&
             item.password === password
-        );
-
-    });
-
+    );
 
     if (!user) {
 
-        showToast("Username atau password salah.");
+        showToast(
+            "Username atau password salah.",
+            "error"
+        );
 
         return;
     }
-
 
     currentUser = user;
 
     localStorage.setItem(
-        "anstore_current_user",
+        "tokotokand_current_user",
         JSON.stringify(currentUser)
     );
-
-
-    document.getElementById("loginUsername").value = "";
-    document.getElementById("loginPassword").value = "";
-
 
     showApp();
 
     showToast(
-        "Selamat datang, " + currentUser.nama + "!"
+        `Selamat datang, ${user.nama}!`,
+        "success"
     );
 
 }
@@ -161,63 +150,67 @@ function login() {
 
 /* =====================================================
    REGISTER
-   ===================================================== */
+===================================================== */
 
-function registerAccount() {
+function registerAccount(event) {
+
+    event.preventDefault();
 
     const nama =
-        document.getElementById("registerName").value.trim();
+        document.getElementById("registerNama")
+            .value
+            .trim();
 
     const username =
-        document.getElementById("registerUsername").value.trim();
+        document.getElementById("registerUsername")
+            .value
+            .trim();
 
     const password =
-        document.getElementById("registerPassword").value;
+        document.getElementById("registerPassword")
+            .value;
 
-    const confirm =
-        document.getElementById("registerConfirm").value;
-
-    const role =
-        document.getElementById("registerRole").value;
-
-
-    if (!nama || !username || !password || !confirm) {
-
-        showToast("Semua data wajib diisi.");
-
-        return;
-    }
-
-
-    if (password !== confirm) {
-
-        showToast("Konfirmasi password tidak sama.");
-
-        return;
-    }
+    const confirmPassword =
+        document.getElementById(
+            "registerConfirmPassword"
+        ).value;
 
 
     if (password.length < 6) {
 
         showToast(
-            "Password minimal 6 karakter."
+            "Password minimal 6 karakter.",
+            "warning"
         );
 
         return;
     }
 
 
-    const usernameExists = akun.some(function (item) {
+    if (password !== confirmPassword) {
 
-        return item.username.toLowerCase() ===
-            username.toLowerCase();
+        showToast(
+            "Konfirmasi password tidak sesuai.",
+            "error"
+        );
 
-    });
+        return;
+    }
+
+
+    const usernameExists = akun.some(
+        item =>
+            item.username.toLowerCase() ===
+            username.toLowerCase()
+    );
 
 
     if (usernameExists) {
 
-        showToast("Username sudah digunakan.");
+        showToast(
+            "Username sudah digunakan.",
+            "error"
+        );
 
         return;
     }
@@ -225,7 +218,10 @@ function registerAccount() {
 
     const newAccount = {
 
-        id: generateId("USR", akun),
+        id: generateId(
+            akun,
+            "USR"
+        ),
 
         nama: nama,
 
@@ -233,7 +229,11 @@ function registerAccount() {
 
         password: password,
 
-        role: role
+        // SEMUA AKUN BARU OTOMATIS MEMBER
+        role: "Member",
+
+        tanggalDaftar:
+            new Date().toISOString()
 
     };
 
@@ -242,56 +242,71 @@ function registerAccount() {
 
     saveData();
 
+    syncMemberData();
 
-    document.getElementById("registerName").value = "";
-    document.getElementById("registerUsername").value = "";
-    document.getElementById("registerPassword").value = "";
-    document.getElementById("registerConfirm").value = "";
-    document.getElementById("registerRole").value = "Member";
+
+    document.getElementById(
+        "registerNama"
+    ).value = "";
+
+    document.getElementById(
+        "registerUsername"
+    ).value = "";
+
+    document.getElementById(
+        "registerPassword"
+    ).value = "";
+
+    document.getElementById(
+        "registerConfirmPassword"
+    ).value = "";
 
 
     showLogin();
 
-    showToast(
-        "Akun berhasil dibuat. Silakan login."
-    );
+    document.getElementById(
+        "loginUsername"
+    ).value = username;
 
+
+    showToast(
+        "Akun berhasil dibuat sebagai Member.",
+        "success"
+    );
 }
 
 
 /* =====================================================
-   LOGIN / REGISTER PAGE
-   ===================================================== */
+   SHOW LOGIN / REGISTER
+===================================================== */
 
 function showRegister() {
 
     document
-        .getElementById("loginForm")
+        .getElementById("loginPage")
         .classList.add("hidden");
 
     document
-        .getElementById("registerForm")
+        .getElementById("registerPage")
         .classList.remove("hidden");
-
 }
 
 
 function showLogin() {
 
     document
-        .getElementById("registerForm")
+        .getElementById("registerPage")
         .classList.add("hidden");
 
     document
-        .getElementById("loginForm")
+        .getElementById("loginPage")
         .classList.remove("hidden");
-
 }
 
 
 /* =====================================================
    PASSWORD
-   ===================================================== */
+===================================================== */
 
 function togglePassword(inputId, button) {
 
@@ -309,15 +324,13 @@ function togglePassword(inputId, button) {
         input.type = "password";
 
         button.textContent = "👁";
-
     }
-
 }
 
 
 /* =====================================================
    SHOW APP
-   ===================================================== */
+===================================================== */
 
 function showApp() {
 
@@ -326,7 +339,11 @@ function showApp() {
         .classList.add("hidden");
 
     document
-        .getElementById("app")
+        .getElementById("registerPage")
+        .classList.add("hidden");
+
+    document
+        .getElementById("appPage")
         .classList.remove("hidden");
 
 
@@ -334,60 +351,50 @@ function showApp() {
 
     updateAll();
 
+    navigate("dashboard");
 }
 
 
 /* =====================================================
    USER INTERFACE
-   ===================================================== */
+===================================================== */
 
 function updateUserInterface() {
 
     if (!currentUser) return;
 
 
-    const firstLetter =
+    document.getElementById(
+        "sidebarUserName"
+    ).textContent = currentUser.nama;
+
+
+    document.getElementById(
+        "sidebarUserRole"
+    ).textContent = currentUser.role;
+
+
+    document.getElementById(
+        "sidebarAvatar"
+    ).textContent =
         currentUser.nama
             .charAt(0)
             .toUpperCase();
 
 
-    document.getElementById("sidebarAvatar")
-        .textContent = firstLetter;
-
-    document.getElementById("topAvatar")
-        .textContent = firstLetter;
-
-
-    document.getElementById("sidebarName")
-        .textContent = currentUser.nama;
-
-    document.getElementById("sidebarRole")
-        .textContent = currentUser.role;
-
-
-    document.getElementById("topName")
-        .textContent = currentUser.nama;
-
-    document.getElementById("topRole")
-        .textContent = currentUser.role;
-
-
-    // MENU ADMIN
-    const adminMenus =
+    const adminElements =
         document.querySelectorAll(".admin-only");
 
 
-    adminMenus.forEach(function (menu) {
+    adminElements.forEach(element => {
 
         if (currentUser.role === "Admin") {
 
-            menu.style.display = "flex";
+            element.style.display = "";
 
         } else {
 
-            menu.style.display = "none";
-
+            element.style.display = "none";
         }
 
     });
@@ -397,119 +404,124 @@ function updateUserInterface() {
 
 /* =====================================================
    LOGOUT
-   ===================================================== */
+===================================================== */
 
 function logout() {
 
-    const confirmLogout =
-        confirm("Apakah Anda yakin ingin logout?");
-
-    if (!confirmLogout) return;
-
-
     currentUser = null;
 
+    cart = [];
+
     localStorage.removeItem(
-        "anstore_current_user"
+        "tokotokand_current_user"
     );
 
-
     document
-        .getElementById("app")
+        .getElementById("appPage")
         .classList.add("hidden");
 
     document
         .getElementById("loginPage")
         .classList.remove("hidden");
 
+    document.getElementById(
+        "loginUsername"
+    ).value = "";
 
-    showLogin();
+    document.getElementById(
+        "loginPassword"
+    ).value = "";
 
-    showToast("Anda telah logout.");
-
+    showToast(
+        "Anda telah logout.",
+        "success"
+    );
 }
 
 
 /* =====================================================
    NAVIGATION
-   ===================================================== */
+===================================================== */
 
-function setupNavigation() {
+function navigate(page) {
 
-    const menuItems =
-        document.querySelectorAll(".menu-item");
-
-
-    menuItems.forEach(function (item) {
-
-        item.addEventListener("click", function () {
-
-            const page =
-                this.dataset.page;
-
-            // MEMBER tidak boleh membuka menu admin
-            if (
-                page === "akun" &&
-                currentUser &&
-                currentUser.role !== "Admin"
-            ) {
-
-                showToast(
-                    "Menu ini hanya dapat diakses Admin."
-                );
-
-                return;
-            }
+    if (!currentUser) return;
 
 
-            menuItems.forEach(function (menu) {
-
-                menu.classList.remove("active");
-
-            });
-
-
-            this.classList.add("active");
+    const adminPages = [
+        "barang",
+        "stok",
+        "member",
+        "akun"
+    ];
 
 
-            document
-                .querySelectorAll(".page")
-                .forEach(function (section) {
+    if (
+        adminPages.includes(page) &&
+        currentUser.role !== "Admin"
+    ) {
 
-                    section.classList.remove(
-                        "active-page"
-                    );
+        showToast(
+            "Menu ini hanya dapat diakses Admin.",
+            "error"
+        );
 
-                });
-
-
-            const target =
-                document.getElementById(
-                    page + "Page"
-                );
+        return;
+    }
 
 
-            if (target) {
-
-                target.classList.add(
-                    "active-page"
-                );
-
-            }
+    document
+        .querySelectorAll(".page")
+        .forEach(item =>
+            item.classList.remove("active")
+        );
 
 
-            updatePageTitle(page);
+    const target =
+        document.getElementById(
+            `page-${page}`
+        );
 
-        });
 
-    });
+    if (target) {
+        target.classList.add("active");
+    }
+
+
+    document
+        .querySelectorAll(".nav-item")
+        .forEach(item =>
+            item.classList.remove("active")
+        );
+
+
+    const nav =
+        document.querySelector(
+            `.nav-item[data-page="${page}"]`
+        );
+
+
+    if (nav) {
+        nav.classList.add("active");
+    }
+
+
+    updatePageTitle(page);
+
+
+    if (window.innerWidth <= 768) {
+
+        document
+            .querySelector(".sidebar")
+            .classList.remove("open");
+    }
 
 }
 
 
 /* =====================================================
    PAGE TITLE
-   ===================================================== */
+===================================================== */
 
 function updatePageTitle(page) {
 
@@ -517,17 +529,17 @@ function updatePageTitle(page) {
 
         dashboard: [
             "Dashboard",
-            "Ringkasan toko hari ini"
+            "Ringkasan aktivitas TOKOTOKOAND"
         ],
 
         barang: [
             "Data Barang",
-            "Kelola data barang toko"
+            "Kelola barang TOKOTOKOAND"
         ],
 
         stok: [
             "Barang Masuk",
-            "Kelola stok barang masuk"
+            "Kelola stok barang"
         ],
 
         penjualan: [
@@ -537,40 +549,42 @@ function updatePageTitle(page) {
 
         riwayat: [
             "Riwayat",
-            "Riwayat transaksi toko"
+            "Riwayat transaksi TOKOTOKOAND"
         ],
 
         member: [
             "Data Member",
-            "Kelola data member toko"
+            "Data pengguna TOKOTOKOAND"
         ],
 
         akun: [
             "Kelola Akun",
-            "Kelola akun pengguna ANSTORE"
+            "Kelola akun dan role pengguna"
         ]
 
     };
 
 
-    if (!titles[page]) return;
+    if (titles[page]) {
 
+        document.getElementById(
+            "pageTitle"
+        ).textContent = titles[page][0];
 
-    document.getElementById("pageTitle")
-        .textContent = titles[page][0];
-
-
-    document.getElementById("pageSubtitle")
-        .textContent = titles[page][1];
-
+        document.getElementById(
+            "pageSubtitle"
+        ).textContent = titles[page][1];
+    }
 }
 
 
 /* =====================================================
-   UPDATE SEMUA DATA
-   ===================================================== */
+   UPDATE ALL
+===================================================== */
 
 function updateAll() {
+
+    syncMemberData();
 
     renderDashboard();
 
@@ -578,22 +592,36 @@ function updateAll() {
 
     renderStok();
 
+    renderSaleOptions();
+
     renderMember();
 
     renderAkun();
 
-    renderSaleOptions();
-
-    renderCart();
-
     renderRiwayat();
-
 }
 
 
 /* =====================================================
-   FORMAT RUPIAH
-   ===================================================== */
+   MEMBER DATA
+=====================================================
+
+   Data Member otomatis berasal dari akun.
+   Tidak ada data telepon/email/alamat.
+===================================================== */
+
+function syncMemberData() {
+
+    // Fungsi ini tidak membuat array member terpisah.
+    // Data akun digunakan langsung sebagai data member.
+
+    renderMember();
+}
+
+
+/* =====================================================
+   RUPIAH
+===================================================== */
 
 function rupiah(number) {
 
@@ -602,58 +630,46 @@ function rupiah(number) {
         {
             style: "currency",
             currency: "IDR",
-            minimumFractionDigits: 0
+            maximumFractionDigits: 0
         }
-    ).format(number || 0);
-
+    ).format(Number(number) || 0);
 }
 
 
 /* =====================================================
    GENERATE ID
-   ===================================================== */
+===================================================== */
 
-function generateId(prefix, array) {
+function generateId(array, prefix) {
 
-    let maxNumber = 0;
+    let max = 0;
 
+    array.forEach(item => {
 
-    array.forEach(function (item) {
+        const match =
+            String(item.id || "")
+                .match(/(\d+)$/);
 
-        const id =
-            item.id ||
-            item.idBarang ||
-            item.idMember;
+        if (match) {
 
+            const number =
+                parseInt(match[1]);
 
-        if (!id) return;
-
-
-        const number =
-            parseInt(
-                String(id).replace(/\D/g, "")
-            ) || 0;
-
-
-        if (number > maxNumber) {
-
-            maxNumber = number;
-
+            if (number > max) {
+                max = number;
+            }
         }
 
     });
 
-
     return prefix +
-        String(maxNumber + 1)
-            .padStart(3, "0");
-
+        String(max + 1).padStart(3, "0");
 }
 
 
 /* =====================================================
    DASHBOARD
-   ===================================================== */
+===================================================== */
 
 function renderDashboard() {
 
@@ -662,59 +678,67 @@ function renderDashboard() {
 
 
     const totalStok =
-        barang.reduce(function (total, item) {
-
-            return total + Number(item.stok);
-
-        }, 0);
-
-
-    document.getElementById("statBarang")
-        .textContent = totalBarang;
+        barang.reduce(
+            (total, item) =>
+                total + Number(item.stok || 0),
+            0
+        );
 
 
-    document.getElementById("statStok")
-        .textContent = totalStok;
-
-
-    document.getElementById("statMember")
-        .textContent = member.length;
+    const totalMember =
+        akun.filter(
+            item => item.role === "Member"
+        ).length;
 
 
     const today =
-        new Date().toLocaleDateString("id-ID");
+        new Date().toDateString();
 
 
     const todaySales =
         transaksi
-            .filter(function (item) {
+            .filter(
+                trx =>
+                    new Date(
+                        trx.tanggal
+                    ).toDateString() === today
+            )
+            .reduce(
+                (total, trx) =>
+                    total + Number(trx.total || 0),
+                0
+            );
 
-                return item.tanggal.startsWith(
-                    new Date().toISOString().slice(0, 10)
-                );
 
-            })
-            .reduce(function (total, item) {
-
-                return total + Number(item.total);
-
-            }, 0);
+    document.getElementById(
+        "statBarang"
+    ).textContent = totalBarang;
 
 
-    document.getElementById("statPenjualan")
-        .textContent = rupiah(todaySales);
+    document.getElementById(
+        "statStok"
+    ).textContent = totalStok;
+
+
+    document.getElementById(
+        "statMember"
+    ).textContent = totalMember;
+
+
+    document.getElementById(
+        "statPenjualan"
+    ).textContent = rupiah(todaySales);
 
 
     renderLowStock();
 
     renderRecentTransactions();
-
 }
 
 
 /* =====================================================
    LOW STOCK
-   ===================================================== */
+===================================================== */
 
 function renderLowStock() {
 
@@ -726,22 +750,26 @@ function renderLowStock() {
 
     const lowStock =
         barang
-            .filter(function (item) {
-
-                return Number(item.stok) <= 10;
-
-            })
-            .slice(0, 10);
+            .filter(
+                item =>
+                    Number(item.stok) <= 10
+            )
+            .sort(
+                (a, b) =>
+                    Number(a.stok) -
+                    Number(b.stok)
+            )
+            .slice(0, 8);
 
 
     if (lowStock.length === 0) {
 
         tbody.innerHTML = `
             <tr>
-                <td colspan="4">
+                <td colspan="3">
                     <div class="empty-state">
-                        <div class="empty-icon">📦</div>
-                        Belum ada barang dengan stok menipis.
+                        ✅
+                        <p>Tidak ada stok menipis</p>
                     </div>
                 </td>
             </tr>
@@ -752,34 +780,34 @@ function renderLowStock() {
 
 
     tbody.innerHTML =
-        lowStock.map(function (item) {
+        lowStock.map(item => `
 
-            return `
-                <tr>
+            <tr>
 
-                    <td>${item.id}</td>
+                <td>
+                    ${escapeHTML(item.nama)}
+                </td>
 
-                    <td>${escapeHTML(item.nama)}</td>
+                <td>
+                    <strong>
+                        ${item.stok}
+                    </strong>
+                    ${escapeHTML(item.satuan)}
+                </td>
 
-                    <td>
-                        <strong>${item.stok}</strong>
-                    </td>
+                <td>
+                    ${getStatusBadge(item.stok)}
+                </td>
 
-                    <td>
-                        ${getStatusBadge(item.stok)}
-                    </td>
+            </tr>
 
-                </tr>
-            `;
-
-        }).join("");
-
+        `).join("");
 }
 
 
 /* =====================================================
    RECENT TRANSACTIONS
-   ===================================================== */
+===================================================== */
 
 function renderRecentTransactions() {
 
@@ -791,7 +819,11 @@ function renderRecentTransactions() {
 
     const recent =
         [...transaksi]
-            .reverse()
+            .sort(
+                (a, b) =>
+                    new Date(b.tanggal) -
+                    new Date(a.tanggal)
+            )
             .slice(0, 5);
 
 
@@ -799,10 +831,10 @@ function renderRecentTransactions() {
 
         tbody.innerHTML = `
             <tr>
-                <td colspan="3">
+                <td colspan="4">
                     <div class="empty-state">
-                        <div class="empty-icon">🧾</div>
-                        Belum ada transaksi.
+                        🧾
+                        <p>Belum ada transaksi</p>
                     </div>
                 </td>
             </tr>
@@ -813,34 +845,73 @@ function renderRecentTransactions() {
 
 
     tbody.innerHTML =
-        recent.map(function (item) {
+        recent.map(trx => `
 
-            return `
-                <tr>
+            <tr>
 
-                    <td>${item.id}</td>
+                <td>
+                    <strong>
+                        ${escapeHTML(trx.id)}
+                    </strong>
+                </td>
 
-                    <td>
-                        ${escapeHTML(item.memberNama)}
-                    </td>
+                <td>
+                    ${escapeHTML(trx.memberNama)}
+                </td>
 
-                    <td>
-                        <strong>
-                            ${rupiah(item.total)}
-                        </strong>
-                    </td>
+                <td>
+                    ${rupiah(trx.total)}
+                </td>
 
-                </tr>
-            `;
+                <td>
+                    ${paymentBadge(trx.pembayaran)}
+                </td>
 
-        }).join("");
+            </tr>
 
+        `).join("");
 }
 
 
 /* =====================================================
-   BARANG
-   ===================================================== */
+   STATUS BARANG
+===================================================== */
+
+function getStatusBadge(stok) {
+
+    stok = Number(stok);
+
+    if (stok <= 0) {
+
+        return `
+            <span class="badge badge-danger">
+                Habis
+            </span>
+        `;
+
+    }
+
+    if (stok <= 10) {
+
+        return `
+            <span class="badge badge-warning">
+                Hampir Habis
+            </span>
+        `;
+
+    }
+
+    return `
+        <span class="badge badge-success">
+            Tersedia
+        </span>
+    `;
+}
+
+
+/* =====================================================
+   DATA BARANG
+===================================================== */
 
 function renderBarang() {
 
@@ -856,31 +927,38 @@ function renderBarang() {
                 "searchBarang"
             )?.value || ""
         )
-        .toLowerCase();
+            .toLowerCase();
 
 
     const filtered =
-        barang.filter(function (item) {
+        barang.filter(item =>
 
-            return (
-                item.nama.toLowerCase().includes(search) ||
-                item.kategori.toLowerCase().includes(search) ||
-                item.id.toLowerCase().includes(search)
-            );
+            item.nama
+                .toLowerCase()
+                .includes(search)
 
-        });
+            ||
+
+            item.kategori
+                .toLowerCase()
+                .includes(search)
+
+            ||
+
+            item.id
+                .toLowerCase()
+                .includes(search)
+        );
 
 
     if (filtered.length === 0) {
 
         tbody.innerHTML = `
             <tr>
-                <td colspan="9">
+                <td colspan="10">
                     <div class="empty-state">
-                        <div class="empty-icon">📦</div>
-                        Belum ada data barang.
-                        <br>
-                        Klik <b>+ Tambah Barang</b> untuk menambahkan.
+                        📦
+                        <p>Belum ada barang</p>
                     </div>
                 </td>
             </tr>
@@ -891,129 +969,120 @@ function renderBarang() {
 
 
     tbody.innerHTML =
-        filtered.map(function (item) {
+        filtered.map(item => `
 
-            return `
-                <tr>
+            <tr>
 
-                    <td>${item.id}</td>
+                <td>
+                    ${productImage(item)}
+                </td>
 
-                    <td>
-                        <strong>
-                            ${escapeHTML(item.nama)}
-                        </strong>
-                    </td>
+                <td>
+                    ${escapeHTML(item.id)}
+                </td>
 
-                    <td>
-                        ${escapeHTML(item.kategori)}
-                    </td>
+                <td>
+                    <strong>
+                        ${escapeHTML(item.nama)}
+                    </strong>
+                </td>
 
-                    <td>
-                        ${rupiah(item.hargaBeli)}
-                    </td>
+                <td>
+                    ${escapeHTML(item.kategori)}
+                </td>
 
-                    <td>
-                        ${rupiah(item.hargaJual)}
-                    </td>
+                <td>
+                    ${rupiah(item.hargaBeli)}
+                </td>
 
-                    <td>
-                        <strong>${item.stok}</strong>
-                    </td>
+                <td>
+                    ${rupiah(item.hargaJual)}
+                </td>
 
-                    <td>
-                        ${item.satuan}
-                    </td>
+                <td>
+                    <strong>
+                        ${item.stok}
+                    </strong>
+                </td>
 
-                    <td>
-                        ${getStatusBadge(item.stok)}
-                    </td>
+                <td>
+                    ${escapeHTML(item.satuan)}
+                </td>
 
-                    <td>
+                <td>
+                    ${getStatusBadge(item.stok)}
+                </td>
 
-                        <div class="action-buttons">
+                <td>
 
-                            <button
-                                class="action-button action-edit"
-                                onclick="editBarang('${item.id}')"
-                                title="Edit"
-                            >
-                                ✏️
-                            </button>
+                    <div class="action-buttons">
 
-                            <button
-                                class="action-button action-delete"
-                                onclick="deleteBarang('${item.id}')"
-                                title="Hapus"
-                            >
-                                🗑️
-                            </button>
+                        <button
+                            class="action-btn action-edit"
+                            onclick="editBarang('${item.id}')"
+                        >
+                            ✏️
+                        </button>
 
-                        </div>
+                        <button
+                            class="action-btn action-delete"
+                            onclick="deleteBarang('${item.id}')"
+                        >
+                            🗑️
+                        </button>
 
-                    </td>
+                    </div>
 
-                </tr>
-            `;
+                </td>
 
-        }).join("");
+            </tr>
 
+        `).join("");
 }
 
 
 /* =====================================================
-   STATUS BARANG
-   ===================================================== */
+   PRODUCT IMAGE
+===================================================== */
 
-function getStatusBadge(stok) {
+function productImage(item) {
 
-    stok = Number(stok);
-
-
-    if (stok <= 0) {
+    if (item.gambar) {
 
         return `
-            <span class="badge badge-danger">
-                Habis
-            </span>
+            <img
+                src="${item.gambar}"
+                class="product-thumb"
+                alt="${escapeHTML(item.nama)}"
+            >
         `;
 
     }
-
-
-    if (stok <= 10) {
-
-        return `
-            <span class="badge badge-warning">
-                Hampir Habis
-            </span>
-        `;
-
-    }
-
 
     return `
-        <span class="badge badge-success">
-            Tersedia
-        </span>
+        <div class="no-image">
+            📦
+        </div>
     `;
-
 }
 
 
 /* =====================================================
-   MODAL BARANG
-   ===================================================== */
+   BARANG MODAL
+===================================================== */
 
-function openBarangModal() {
-
-    document.getElementById(
-        "barangModalTitle"
-    ).textContent = "Tambah Barang";
-
+function openBarangModal(id = "") {
 
     document.getElementById(
         "barangEditId"
-    ).value = "";
+    ).value = id;
+
+    document.getElementById(
+        "barangModalTitle"
+    ).textContent =
+        id
+            ? "Edit Barang"
+            : "Tambah Barang";
 
 
     document.getElementById(
@@ -1025,32 +1094,175 @@ function openBarangModal() {
     ).value = "";
 
     document.getElementById(
-        "barangBeli"
+        "barangHargaBeli"
     ).value = "";
 
     document.getElementById(
-        "barangJual"
+        "barangHargaJual"
     ).value = "";
 
     document.getElementById(
         "barangStok"
-    ).value = "0";
+    ).value = "";
 
     document.getElementById(
         "barangSatuan"
-    ).value = "pcs";
+    ).value = "";
+
+
+    editingBarangImage = "";
+
+
+    const preview =
+        document.getElementById(
+            "barangImagePreview"
+        );
+
+    const placeholder =
+        document.getElementById(
+            "imagePlaceholder"
+        );
+
+
+    preview.src = "";
+
+    preview.style.display = "none";
+
+    placeholder.style.display = "block";
+
+
+    document.getElementById(
+        "barangImage"
+    ).value = "";
+
+
+    if (id) {
+
+        const item =
+            barang.find(
+                item => item.id === id
+            );
+
+
+        if (item) {
+
+            document.getElementById(
+                "barangNama"
+            ).value = item.nama;
+
+            document.getElementById(
+                "barangKategori"
+            ).value = item.kategori;
+
+            document.getElementById(
+                "barangHargaBeli"
+            ).value = item.hargaBeli;
+
+            document.getElementById(
+                "barangHargaJual"
+            ).value = item.hargaJual;
+
+            document.getElementById(
+                "barangStok"
+            ).value = item.stok;
+
+            document.getElementById(
+                "barangSatuan"
+            ).value = item.satuan;
+
+
+            editingBarangImage =
+                item.gambar || "";
+
+
+            if (item.gambar) {
+
+                preview.src =
+                    item.gambar;
+
+                preview.style.display =
+                    "block";
+
+                placeholder.style.display =
+                    "none";
+            }
+
+        }
+
+    }
 
 
     openModal("barangModal");
+}
 
+
+/* =====================================================
+   PREVIEW IMAGE
+===================================================== */
+
+function previewBarangImage(event) {
+
+    const file =
+        event.target.files[0];
+
+    if (!file) return;
+
+
+    if (!file.type.startsWith("image/")) {
+
+        showToast(
+            "File harus berupa gambar.",
+            "error"
+        );
+
+        return;
+    }
+
+
+    const reader =
+        new FileReader();
+
+
+    reader.onload = function(e) {
+
+        editingBarangImage =
+            e.target.result;
+
+
+        const preview =
+            document.getElementById(
+                "barangImagePreview"
+            );
+
+        const placeholder =
+            document.getElementById(
+                "imagePlaceholder"
+            );
+
+
+        preview.src =
+            e.target.result;
+
+        preview.style.display =
+            "block";
+
+        placeholder.style.display =
+            "none";
+    };
+
+
+    reader.readAsDataURL(file);
 }
 
 
 /* =====================================================
    SAVE BARANG
-   ===================================================== */
+===================================================== */
 
-function saveBarang() {
+function saveBarang(event) {
+
+    event.preventDefault();
+
 
     const editId =
         document.getElementById(
@@ -1058,241 +1270,175 @@ function saveBarang() {
         ).value;
 
 
-    const nama =
-        document.getElementById(
-            "barangNama"
-        ).value.trim();
+    const data = {
 
-
-    const kategori =
-        document.getElementById(
-            "barangKategori"
-        ).value.trim();
-
-
-    const hargaBeli =
-        Number(
+        nama:
             document.getElementById(
-                "barangBeli"
-            ).value
-        );
+                "barangNama"
+            ).value.trim(),
 
-
-    const hargaJual =
-        Number(
+        kategori:
             document.getElementById(
-                "barangJual"
-            ).value
-        );
+                "barangKategori"
+            ).value.trim(),
 
+        hargaBeli:
+            Number(
+                document.getElementById(
+                    "barangHargaBeli"
+                ).value
+            ),
 
-    const stok =
-        Number(
+        hargaJual:
+            Number(
+                document.getElementById(
+                    "barangHargaJual"
+                ).value
+            ),
+
+        stok:
+            Number(
+                document.getElementById(
+                    "barangStok"
+                ).value
+            ),
+
+        satuan:
             document.getElementById(
-                "barangStok"
-            ).value
-        );
+                "barangSatuan"
+            ).value.trim(),
+
+        gambar:
+            editingBarangImage
+
+    };
 
 
-    const satuan =
-        document.getElementById(
-            "barangSatuan"
-        ).value;
-
-
-    if (!nama || !kategori) {
+    if (data.hargaJual < data.hargaBeli) {
 
         showToast(
-            "Nama dan kategori wajib diisi."
+            "Harga jual sebaiknya tidak lebih kecil dari harga beli.",
+            "warning"
         );
-
-        return;
-    }
-
-
-    if (hargaBeli < 0 || hargaJual < 0 || stok < 0) {
-
-        showToast(
-            "Nilai harga dan stok tidak valid."
-        );
-
-        return;
     }
 
 
     if (editId) {
 
-        const item =
-            barang.find(function (item) {
-
-                return item.id === editId;
-
-            });
+        const index =
+            barang.findIndex(
+                item => item.id === editId
+            );
 
 
-        if (item) {
+        if (index !== -1) {
 
-            item.nama = nama;
-            item.kategori = kategori;
-            item.hargaBeli = hargaBeli;
-            item.hargaJual = hargaJual;
-            item.stok = stok;
-            item.satuan = satuan;
+            barang[index] = {
 
+                ...barang[index],
+
+                ...data
+
+            };
+
+            showToast(
+                "Barang berhasil diperbarui.",
+                "success"
+            );
         }
-
-
-        showToast(
-            "Barang berhasil diperbarui."
-        );
 
     } else {
 
         barang.push({
 
-            id: generateId("BRG", barang),
+            id:
+                generateId(
+                    barang,
+                    "BRG"
+                ),
 
-            nama: nama,
-
-            kategori: kategori,
-
-            hargaBeli: hargaBeli,
-
-            hargaJual: hargaJual,
-
-            stok: stok,
-
-            satuan: satuan
+            ...data
 
         });
 
 
         showToast(
-            "Barang berhasil ditambahkan."
+            "Barang berhasil ditambahkan.",
+            "success"
         );
-
     }
 
 
     saveData();
 
+    renderBarang();
+
+    renderDashboard();
+
+    renderSaleOptions();
+
     closeModal("barangModal");
-
-    updateAll();
-
 }
 
 
 /* =====================================================
    EDIT BARANG
-   ===================================================== */
+===================================================== */
 
 function editBarang(id) {
 
-    const item =
-        barang.find(function (item) {
-
-            return item.id === id;
-
-        });
-
-
-    if (!item) return;
-
-
-    document.getElementById(
-        "barangModalTitle"
-    ).textContent = "Edit Barang";
-
-
-    document.getElementById(
-        "barangEditId"
-    ).value = item.id;
-
-
-    document.getElementById(
-        "barangNama"
-    ).value = item.nama;
-
-
-    document.getElementById(
-        "barangKategori"
-    ).value = item.kategori;
-
-
-    document.getElementById(
-        "barangBeli"
-    ).value = item.hargaBeli;
-
-
-    document.getElementById(
-        "barangJual"
-    ).value = item.hargaJual;
-
-
-    document.getElementById(
-        "barangStok"
-    ).value = item.stok;
-
-
-    document.getElementById(
-        "barangSatuan"
-    ).value = item.satuan;
-
-
-    openModal("barangModal");
-
+    openBarangModal(id);
 }
 
 
 /* =====================================================
    DELETE BARANG
-   ===================================================== */
+===================================================== */
 
 function deleteBarang(id) {
 
     const item =
-        barang.find(function (item) {
-
-            return item.id === id;
-
-        });
+        barang.find(
+            item => item.id === id
+        );
 
 
     if (!item) return;
 
 
-    const confirmed =
+    const confirmDelete =
         confirm(
             `Hapus barang "${item.nama}"?`
         );
 
 
-    if (!confirmed) return;
+    if (!confirmDelete) return;
 
 
     barang =
-        barang.filter(function (item) {
-
-            return item.id !== id;
-
-        });
+        barang.filter(
+            item => item.id !== id
+        );
 
 
     saveData();
 
-    updateAll();
+    renderBarang();
+
+    renderDashboard();
+
+    renderSaleOptions();
 
     showToast(
-        "Barang berhasil dihapus."
+        "Barang berhasil dihapus.",
+        "success"
     );
-
 }
 
 
 /* =====================================================
-   STOK
-   ===================================================== */
+   BARANG MASUK
+===================================================== */
 
 function renderStok() {
 
@@ -1308,8 +1454,8 @@ function renderStok() {
             <tr>
                 <td colspan="5">
                     <div class="empty-state">
-                        <div class="empty-icon">📥</div>
-                        Belum ada barang.
+                        📦
+                        <p>Belum ada barang</p>
                     </div>
                 </td>
             </tr>
@@ -1320,42 +1466,41 @@ function renderStok() {
 
 
     tbody.innerHTML =
-        barang.map(function (item) {
+        barang.map(item => `
 
-            return `
-                <tr>
+            <tr>
 
-                    <td>${item.id}</td>
+                <td>
+                    ${productImage(item)}
+                </td>
 
-                    <td>
-                        <strong>
-                            ${escapeHTML(item.nama)}
-                        </strong>
-                    </td>
+                <td>
+                    ${escapeHTML(item.id)}
+                </td>
 
-                    <td>
+                <td>
+                    ${escapeHTML(item.nama)}
+                </td>
+
+                <td>
+                    <strong>
                         ${item.stok}
-                    </td>
+                    </strong>
+                </td>
 
-                    <td>
-                        ${item.satuan}
-                    </td>
+                <td>
+                    ${escapeHTML(item.satuan)}
+                </td>
 
-                    <td>
-                        ${getStatusBadge(item.stok)}
-                    </td>
+            </tr>
 
-                </tr>
-            `;
-
-        }).join("");
-
+        `).join("");
 }
 
 
 /* =====================================================
    STOK MODAL
-   ===================================================== */
+===================================================== */
 
 function openStokModal() {
 
@@ -1365,23 +1510,26 @@ function openStokModal() {
         );
 
 
-    select.innerHTML = `
-        <option value="">
-            Pilih barang
-        </option>
-    `;
+    if (barang.length === 0) {
+
+        showToast(
+            "Tambahkan barang terlebih dahulu.",
+            "warning"
+        );
+
+        return;
+    }
 
 
-    barang.forEach(function (item) {
+    select.innerHTML =
+        barang.map(item => `
 
-        select.innerHTML += `
             <option value="${item.id}">
                 ${escapeHTML(item.nama)}
-                - stok ${item.stok}
+                — Stok ${item.stok}
             </option>
-        `;
 
-    });
+        `).join("");
 
 
     document.getElementById(
@@ -1390,15 +1538,17 @@ function openStokModal() {
 
 
     openModal("stokModal");
-
 }
 
 
 /* =====================================================
    TAMBAH STOK
-   ===================================================== */
+===================================================== */
 
-function tambahStok() {
+function tambahStok(event) {
+
+    event.preventDefault();
+
 
     const id =
         document.getElementById(
@@ -1414,401 +1564,52 @@ function tambahStok() {
         );
 
 
-    if (!id) {
-
-        showToast(
-            "Pilih barang terlebih dahulu."
-        );
-
-        return;
-    }
-
-
-    if (!jumlah || jumlah <= 0) {
-
-        showToast(
-            "Jumlah stok harus lebih dari 0."
-        );
-
-        return;
-    }
-
-
     const item =
-        barang.find(function (item) {
-
-            return item.id === id;
-
-        });
+        barang.find(
+            item => item.id === id
+        );
 
 
-    if (!item) return;
+    if (!item || jumlah <= 0) {
+
+        showToast(
+            "Data stok tidak valid.",
+            "error"
+        );
+
+        return;
+    }
 
 
-    item.stok += jumlah;
+    item.stok =
+        Number(item.stok) +
+        jumlah;
 
 
     saveData();
+
+    renderStok();
+
+    renderBarang();
+
+    renderDashboard();
+
+    renderSaleOptions();
+
 
     closeModal("stokModal");
 
-    updateAll();
-
 
     showToast(
-        `Stok ${item.nama} bertambah ${jumlah}.`
+        `Stok ${item.nama} bertambah ${jumlah}.`,
+        "success"
     );
-
 }
 
 
 /* =====================================================
-   MEMBER
-   ===================================================== */
-
-function renderMember() {
-
-    const tbody =
-        document.getElementById(
-            "memberTable"
-        );
-
-
-    const search =
-        (
-            document.getElementById(
-                "searchMember"
-            )?.value || ""
-        )
-        .toLowerCase();
-
-
-    const filtered =
-        member.filter(function (item) {
-
-            return (
-                item.nama.toLowerCase().includes(search) ||
-                item.id.toLowerCase().includes(search) ||
-                item.telepon.toLowerCase().includes(search)
-            );
-
-        });
-
-
-    if (filtered.length === 0) {
-
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="6">
-                    <div class="empty-state">
-                        <div class="empty-icon">👥</div>
-                        Belum ada data member.
-                        <br>
-                        Klik <b>+ Tambah Member</b> untuk menambahkan.
-                    </div>
-                </td>
-            </tr>
-        `;
-
-        return;
-    }
-
-
-    tbody.innerHTML =
-        filtered.map(function (item) {
-
-            return `
-                <tr>
-
-                    <td>${item.id}</td>
-
-                    <td>
-                        <strong>
-                            ${escapeHTML(item.nama)}
-                        </strong>
-                    </td>
-
-                    <td>
-                        ${escapeHTML(item.telepon)}
-                    </td>
-
-                    <td>
-                        ${escapeHTML(item.email)}
-                    </td>
-
-                    <td>
-                        ${escapeHTML(item.alamat)}
-                    </td>
-
-                    <td>
-
-                        <div class="action-buttons">
-
-                            <button
-                                class="action-button action-edit"
-                                onclick="editMember('${item.id}')"
-                            >
-                                ✏️
-                            </button>
-
-                            <button
-                                class="action-button action-delete"
-                                onclick="deleteMember('${item.id}')"
-                            >
-                                🗑️
-                            </button>
-
-                        </div>
-
-                    </td>
-
-                </tr>
-            `;
-
-        }).join("");
-
-}
-
-
-/* =====================================================
-   MEMBER MODAL
-   ===================================================== */
-
-function openMemberModal() {
-
-    document.getElementById(
-        "memberModalTitle"
-    ).textContent = "Tambah Member";
-
-
-    document.getElementById(
-        "memberEditId"
-    ).value = "";
-
-
-    document.getElementById(
-        "memberNama"
-    ).value = "";
-
-    document.getElementById(
-        "memberTelepon"
-    ).value = "";
-
-    document.getElementById(
-        "memberEmail"
-    ).value = "";
-
-    document.getElementById(
-        "memberAlamat"
-    ).value = "";
-
-
-    openModal("memberModal");
-
-}
-
-
-/* =====================================================
-   SAVE MEMBER
-   ===================================================== */
-
-function saveMember() {
-
-    const editId =
-        document.getElementById(
-            "memberEditId"
-        ).value;
-
-
-    const nama =
-        document.getElementById(
-            "memberNama"
-        ).value.trim();
-
-
-    const telepon =
-        document.getElementById(
-            "memberTelepon"
-        ).value.trim();
-
-
-    const email =
-        document.getElementById(
-            "memberEmail"
-        ).value.trim();
-
-
-    const alamat =
-        document.getElementById(
-            "memberAlamat"
-        ).value.trim();
-
-
-    if (!nama) {
-
-        showToast(
-            "Nama member wajib diisi."
-        );
-
-        return;
-    }
-
-
-    if (editId) {
-
-        const item =
-            member.find(function (item) {
-
-                return item.id === editId;
-
-            });
-
-
-        if (item) {
-
-            item.nama = nama;
-            item.telepon = telepon;
-            item.email = email;
-            item.alamat = alamat;
-
-        }
-
-
-        showToast(
-            "Member berhasil diperbarui."
-        );
-
-    } else {
-
-        member.push({
-
-            id: generateId("MBR", member),
-
-            nama: nama,
-
-            telepon: telepon,
-
-            email: email,
-
-            alamat: alamat
-
-        });
-
-
-        showToast(
-            "Member berhasil ditambahkan."
-        );
-
-    }
-
-
-    saveData();
-
-    closeModal("memberModal");
-
-    updateAll();
-
-}
-
-
-/* =====================================================
-   EDIT MEMBER
-   ===================================================== */
-
-function editMember(id) {
-
-    const item =
-        member.find(function (item) {
-
-            return item.id === id;
-
-        });
-
-
-    if (!item) return;
-
-
-    document.getElementById(
-        "memberModalTitle"
-    ).textContent = "Edit Member";
-
-
-    document.getElementById(
-        "memberEditId"
-    ).value = item.id;
-
-
-    document.getElementById(
-        "memberNama"
-    ).value = item.nama;
-
-
-    document.getElementById(
-        "memberTelepon"
-    ).value = item.telepon;
-
-
-    document.getElementById(
-        "memberEmail"
-    ).value = item.email;
-
-
-    document.getElementById(
-        "memberAlamat"
-    ).value = item.alamat;
-
-
-    openModal("memberModal");
-
-}
-
-
-/* =====================================================
-   DELETE MEMBER
-   ===================================================== */
-
-function deleteMember(id) {
-
-    const item =
-        member.find(function (item) {
-
-            return item.id === id;
-
-        });
-
-
-    if (!item) return;
-
-
-    if (
-        !confirm(
-            `Hapus member "${item.nama}"?`
-        )
-    ) return;
-
-
-    member =
-        member.filter(function (item) {
-
-            return item.id !== id;
-
-        });
-
-
-    saveData();
-
-    updateAll();
-
-    showToast(
-        "Member berhasil dihapus."
-    );
-
-}
-
-
-/* =====================================================
-   SALES OPTIONS
-   ===================================================== */
+   SALE OPTIONS
+===================================================== */
 
 function renderSaleOptions() {
 
@@ -1828,10 +1629,6 @@ function renderSaleOptions() {
         return;
 
 
-    const selectedMember =
-        memberSelect.value;
-
-
     memberSelect.innerHTML = `
         <option value="">
             Umum
@@ -1839,30 +1636,21 @@ function renderSaleOptions() {
     `;
 
 
-    member.forEach(function (item) {
+    akun
+        .filter(
+            item => item.role === "Member"
+        )
+        .forEach(item => {
 
-        memberSelect.innerHTML += `
-            <option value="${item.id}">
-                ${escapeHTML(item.nama)}
-            </option>
-        `;
+            memberSelect.innerHTML += `
 
-    });
+                <option value="${item.id}">
+                    ${escapeHTML(item.nama)}
+                    (@${escapeHTML(item.username)})
+                </option>
 
-
-    if (
-        member.some(function (item) {
-            return item.id === selectedMember;
-        })
-    ) {
-
-        memberSelect.value = selectedMember;
-
-    }
-
-
-    const selectedBarang =
-        barangSelect.value;
+            `;
+        });
 
 
     barangSelect.innerHTML = `
@@ -1872,91 +1660,112 @@ function renderSaleOptions() {
     `;
 
 
-    barang.forEach(function (item) {
+    barang.forEach(item => {
 
         barangSelect.innerHTML += `
+
             <option value="${item.id}">
                 ${escapeHTML(item.nama)}
-                - ${rupiah(item.hargaJual)}
-                - Stok ${item.stok}
+                — ${rupiah(item.hargaJual)}
+                — Stok ${item.stok}
             </option>
-        `;
 
+        `;
     });
 
 
-    if (
-        barang.some(function (item) {
-            return item.id === selectedBarang;
-        })
-    ) {
-
-        barangSelect.value = selectedBarang;
-
-    }
-
-
     updateSalePrice();
-
 }
 
 
 /* =====================================================
    UPDATE SALE PRICE
-   ===================================================== */
+===================================================== */
 
 function updateSalePrice() {
 
     const id =
         document.getElementById(
             "saleBarang"
-        ).value;
+        )?.value;
 
 
-    const info =
+    const container =
         document.getElementById(
-            "salePriceInfo"
+            "selectedProduct"
         );
 
 
     if (!id) {
 
-        info.textContent =
-            "Pilih barang untuk melihat harga.";
+        container.classList.add("hidden");
 
         return;
     }
 
 
     const item =
-        barang.find(function (item) {
-
-            return item.id === id;
-
-        });
+        barang.find(
+            item => item.id === id
+        );
 
 
     if (!item) return;
 
 
-    info.innerHTML = `
-        Harga jual:
-        <strong>${rupiah(item.hargaJual)}</strong>
-        &nbsp; | &nbsp;
-        Stok tersedia:
-        <strong>${item.stok}</strong>
-    `;
+    container.classList.remove("hidden");
 
+
+    const image =
+        document.getElementById(
+            "selectedProductImage"
+        );
+
+
+    if (item.gambar) {
+
+        image.src =
+            item.gambar;
+
+    } else {
+
+        image.src =
+            "data:image/svg+xml;charset=UTF-8," +
+            encodeURIComponent(
+                `<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100">
+                    <rect width="100%" height="100%" fill="#e2e8f0"/>
+                    <text x="50%" y="55%" text-anchor="middle" font-size="35">📦</text>
+                </svg>`
+            );
+    }
+
+
+    document.getElementById(
+        "selectedProductName"
+    ).textContent =
+        item.nama;
+
+
+    document.getElementById(
+        "selectedProductPrice"
+    ).textContent =
+        rupiah(item.hargaJual);
+
+
+    document.getElementById(
+        "selectedProductStock"
+    ).textContent =
+        `Stok: ${item.stok} ${item.satuan}`;
 }
 
 
 /* =====================================================
    ADD TO CART
-   ===================================================== */
+===================================================== */
 
 function addToCart() {
 
-    const id =
+    const barangId =
         document.getElementById(
             "saleBarang"
         ).value;
@@ -1970,20 +1779,22 @@ function addToCart() {
         );
 
 
-    if (!id) {
+    if (!barangId) {
 
         showToast(
-            "Pilih barang terlebih dahulu."
+            "Pilih barang terlebih dahulu.",
+            "warning"
         );
 
         return;
     }
 
 
-    if (!qty || qty <= 0) {
+    if (qty <= 0) {
 
         showToast(
-            "Jumlah barang tidak valid."
+            "Jumlah barang harus lebih dari 0.",
+            "warning"
         );
 
         return;
@@ -1991,32 +1802,34 @@ function addToCart() {
 
 
     const item =
-        barang.find(function (item) {
-
-            return item.id === id;
-
-        });
+        barang.find(
+            item => item.id === barangId
+        );
 
 
     if (!item) return;
 
 
     const existing =
-        cart.find(function (item) {
-
-            return item.id === id;
-
-        });
+        cart.find(
+            item => item.id === barangId
+        );
 
 
     const currentQty =
-        existing ? existing.qty : 0;
+        existing
+            ? existing.qty
+            : 0;
 
 
-    if (currentQty + qty > item.stok) {
+    if (
+        currentQty + qty >
+        Number(item.stok)
+    ) {
 
         showToast(
-            "Jumlah melebihi stok yang tersedia."
+            "Jumlah melebihi stok tersedia.",
+            "error"
         );
 
         return;
@@ -2035,12 +1848,17 @@ function addToCart() {
 
             nama: item.nama,
 
-            harga: item.hargaJual,
+            harga:
+                Number(item.hargaJual),
 
-            qty: qty
+            qty: qty,
+
+            satuan: item.satuan,
+
+            gambar:
+                item.gambar || ""
 
         });
-
     }
 
 
@@ -2051,153 +1869,270 @@ function addToCart() {
 
     renderCart();
 
-    showToast(
-        "Barang ditambahkan ke keranjang."
-    );
+    calculateChange();
 
+
+    showToast(
+        "Barang ditambahkan ke keranjang.",
+        "success"
+    );
 }
 
 
 /* =====================================================
-   CART
-   ===================================================== */
+   RENDER CART
+===================================================== */
 
 function renderCart() {
 
-    const tbody =
+    const container =
         document.getElementById(
-            "cartTable"
+            "cartContainer"
         );
 
 
-    const cartCount =
-        document.getElementById(
-            "cartCount"
+    const count =
+        cart.reduce(
+            (total, item) =>
+                total + item.qty,
+            0
         );
 
 
-    const cartTotal =
-        document.getElementById(
-            "cartTotal"
+    const total =
+        cart.reduce(
+            (total, item) =>
+                total +
+                item.harga *
+                item.qty,
+            0
         );
+
+
+    document.getElementById(
+        "cartCount"
+    ).textContent =
+        `${count} item`;
+
+
+    document.getElementById(
+        "cartTotal"
+    ).textContent =
+        rupiah(total);
 
 
     if (cart.length === 0) {
 
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5">
-                    <div class="empty-state">
-                        <div class="empty-icon">🛒</div>
-                        Keranjang masih kosong.
-                    </div>
-                </td>
-            </tr>
+        container.innerHTML = `
+            <div class="empty-state">
+                🛒
+                <p>Keranjang masih kosong</p>
+            </div>
         `;
-
-
-        cartCount.textContent =
-            "0 item";
-
-
-        cartTotal.textContent =
-            "Rp 0";
-
 
         return;
     }
 
 
-    let total = 0;
+    container.innerHTML =
+        cart.map(item => `
 
-    let totalQty = 0;
+            <div class="cart-item">
 
+                ${
+                    item.gambar
+                        ? `
+                            <img
+                                src="${item.gambar}"
+                                alt="${escapeHTML(item.nama)}"
+                            >
+                          `
+                        : `
+                            <div class="cart-item-image no-image">
+                                📦
+                            </div>
+                          `
+                }
 
-    tbody.innerHTML =
-        cart.map(function (item, index) {
+                <div class="cart-item-info">
 
-            const subtotal =
-                item.harga * item.qty;
+                    <strong>
+                        ${escapeHTML(item.nama)}
+                    </strong>
 
-
-            total += subtotal;
-
-            totalQty += item.qty;
-
-
-            return `
-                <tr>
-
-                    <td>
-                        <strong>
-                            ${escapeHTML(item.nama)}
-                        </strong>
-                    </td>
-
-                    <td>
+                    <span>
+                        ${item.qty} ×
                         ${rupiah(item.harga)}
-                    </td>
+                    </span>
 
-                    <td>
-                        ${item.qty}
-                    </td>
+                </div>
 
-                    <td>
-                        <strong>
-                            ${rupiah(subtotal)}
-                        </strong>
-                    </td>
+                <div class="cart-item-price">
 
-                    <td>
+                    ${rupiah(
+                        item.harga *
+                        item.qty
+                    )}
 
-                        <button
-                            class="action-button action-delete"
-                            onclick="removeFromCart(${index})"
-                        >
-                            🗑️
-                        </button>
+                </div>
 
-                    </td>
+                <button
+                    class="remove-cart"
+                    onclick="removeFromCart('${item.id}')"
+                >
+                    ×
+                </button>
 
-                </tr>
-            `;
+            </div>
 
-        }).join("");
-
-
-    cartCount.textContent =
-        totalQty + " item";
-
-
-    cartTotal.textContent =
-        rupiah(total);
-
+        `).join("");
 }
 
 
 /* =====================================================
    REMOVE CART
-   ===================================================== */
+===================================================== */
 
-function removeFromCart(index) {
+function removeFromCart(id) {
 
-    cart.splice(index, 1);
+    cart =
+        cart.filter(
+            item => item.id !== id
+        );
+
 
     renderCart();
 
+    calculateChange();
+}
+
+
+/* =====================================================
+   CART TOTAL
+===================================================== */
+
+function getCartTotal() {
+
+    return cart.reduce(
+        (total, item) =>
+            total +
+            item.harga *
+            item.qty,
+        0
+    );
+}
+
+
+/* =====================================================
+   PAYMENT STATUS
+===================================================== */
+
+function setPaymentStatus(status) {
+
+    selectedPaymentStatus =
+        status;
+
+
+    const paidButton =
+        document.getElementById(
+            "paidButton"
+        );
+
+    const unpaidButton =
+        document.getElementById(
+            "unpaidButton"
+        );
+
+
+    paidButton.classList.toggle(
+        "active",
+        status === true
+    );
+
+
+    unpaidButton.classList.toggle(
+        "active",
+        status === false
+    );
+
+
+    calculateChange();
+}
+
+
+/* =====================================================
+   CALCULATE CHANGE
+===================================================== */
+
+function calculateChange() {
+
+    const total =
+        getCartTotal();
+
+
+    const payment =
+        Number(
+            document.getElementById(
+                "paymentAmount"
+            )?.value
+        ) || 0;
+
+
+    let change = 0;
+
+
+    if (payment >= total) {
+
+        change =
+            payment - total;
+
+    }
+
+
+    document.getElementById(
+        "changeAmount"
+    ).textContent =
+        rupiah(change);
 }
 
 
 /* =====================================================
    CHECKOUT
-   ===================================================== */
+===================================================== */
 
 function checkout() {
 
     if (cart.length === 0) {
 
         showToast(
-            "Keranjang masih kosong."
+            "Keranjang masih kosong.",
+            "warning"
+        );
+
+        return;
+    }
+
+
+    const total =
+        getCartTotal();
+
+
+    const payment =
+        Number(
+            document.getElementById(
+                "paymentAmount"
+            ).value
+        ) || 0;
+
+
+    if (
+        selectedPaymentStatus &&
+        payment < total
+    ) {
+
+        showToast(
+            "Uang dibayar masih kurang.",
+            "error"
         );
 
         return;
@@ -2210,133 +2145,138 @@ function checkout() {
         ).value;
 
 
-    const memberData =
-        member.find(function (item) {
-
-            return item.id === memberId;
-
-        });
+    const selectedMember =
+        akun.find(
+            item => item.id === memberId
+        );
 
 
-    const memberNama =
-        memberData
-            ? memberData.nama
-            : "Umum";
+    /*
+        Kalau pembayaran belum dibayar,
+        uang yang masuk bisa 0.
+    */
+
+    const uangDibayar =
+        selectedPaymentStatus
+            ? payment
+            : 0;
 
 
-    let total = 0;
+    const kembalian =
+        selectedPaymentStatus
+            ? Math.max(
+                0,
+                payment - total
+            )
+            : 0;
 
-    let totalQty = 0;
 
+    /*
+        Cek stok sekali lagi
+    */
 
-    // Validasi stok sekali lagi
     for (const cartItem of cart) {
 
-        const item =
-            barang.find(function (item) {
+        const product =
+            barang.find(
+                item =>
+                    item.id === cartItem.id
+            );
 
-                return item.id === cartItem.id;
 
-            });
-
-
-        if (!item) {
+        if (
+            !product ||
+            Number(product.stok) <
+            Number(cartItem.qty)
+        ) {
 
             showToast(
-                "Ada barang yang sudah tidak tersedia."
+                `Stok ${cartItem.nama} tidak mencukupi.`,
+                "error"
             );
 
             return;
         }
-
-
-        if (cartItem.qty > item.stok) {
-
-            showToast(
-                `Stok ${item.nama} tidak mencukupi.`
-            );
-
-            return;
-        }
-
-
-        total +=
-            cartItem.harga *
-            cartItem.qty;
-
-
-        totalQty += cartItem.qty;
-
     }
 
 
-    // Kurangi stok
-    cart.forEach(function (cartItem) {
+    /*
+        Kurangi stok
+    */
 
-        const item =
-            barang.find(function (item) {
+    cart.forEach(cartItem => {
 
-                return item.id === cartItem.id;
+        const product =
+            barang.find(
+                item =>
+                    item.id === cartItem.id
+            );
 
-            });
 
-
-        item.stok -= cartItem.qty;
+        product.stok -=
+            Number(cartItem.qty);
 
     });
 
 
-    const now =
-        new Date();
-
-
     const transaction = {
 
-        id: generateId(
-            "TRX",
-            transaksi
-        ),
+        id:
+            generateId(
+                transaksi,
+                "TRX"
+            ),
 
         tanggal:
-            now.toISOString(),
+            new Date().toISOString(),
 
         memberId:
-            memberId || "",
+            selectedMember
+                ? selectedMember.id
+                : "",
 
         memberNama:
-            memberNama,
+            selectedMember
+                ? selectedMember.nama
+                : "Umum",
 
         jumlahItem:
-            totalQty,
+            cart.reduce(
+                (total, item) =>
+                    total + item.qty,
+                0
+            ),
 
-        total:
-            total,
+        total: total,
+
+        uangDibayar:
+            uangDibayar,
+
+        kembalian:
+            kembalian,
+
+        pembayaran:
+            selectedPaymentStatus
+                ? "Sudah Bayar"
+                : "Belum Bayar",
 
         kasir:
             currentUser
                 ? currentUser.nama
-                : "-",
+                : "System",
 
         detail:
-            cart.map(function (item) {
-
-                return {
-
-                    id: item.id,
-
-                    nama: item.nama,
-
-                    harga: item.harga,
-
-                    qty: item.qty,
-
-                    subtotal:
-                        item.harga *
-                        item.qty
-
-                };
-
-            })
+            cart.map(item => ({
+                id: item.id,
+                nama: item.nama,
+                qty: item.qty,
+                harga: item.harga,
+                subtotal:
+                    item.harga *
+                    item.qty,
+                satuan: item.satuan,
+                gambar: item.gambar
+            }))
 
     };
 
@@ -2344,12 +2284,23 @@ function checkout() {
     transaksi.push(transaction);
 
 
+    saveData();
+
+
+    const transactionId =
+        transaction.id;
+
+
+    /*
+        Reset
+    */
+
     cart = [];
 
 
-    saveData();
-
-    updateAll();
+    document.getElementById(
+        "paymentAmount"
+    ).value = "";
 
 
     document.getElementById(
@@ -2362,19 +2313,50 @@ function checkout() {
     ).value = "";
 
 
-    updateSalePrice();
+    document.getElementById(
+        "saleQty"
+    ).value = 1;
+
+
+    selectedPaymentStatus = true;
+
+
+    setPaymentStatus(true);
+
+
+    renderCart();
+
+    renderDashboard();
+
+    renderBarang();
+
+    renderStok();
+
+    renderSaleOptions();
+
+    renderRiwayat();
 
 
     showToast(
-        "Transaksi berhasil disimpan."
+        `Transaksi ${transactionId} berhasil.`,
+        "success"
     );
+
+
+    setTimeout(() => {
+
+        openTransactionDetail(
+            transactionId
+        );
+
+    }, 300);
 
 }
 
 
 /* =====================================================
    RIWAYAT
-   ===================================================== */
+===================================================== */
 
 function renderRiwayat() {
 
@@ -2384,14 +2366,85 @@ function renderRiwayat() {
         );
 
 
-    if (transaksi.length === 0) {
+    if (!tbody) return;
+
+
+    const search =
+        (
+            document.getElementById(
+                "searchRiwayat"
+            )?.value || ""
+        )
+            .toLowerCase();
+
+
+    const filter =
+        document.getElementById(
+            "filterPembayaran"
+        )?.value || "semua";
+
+
+    let data =
+        [...transaksi];
+
+
+    if (search) {
+
+        data =
+            data.filter(trx =>
+
+                trx.id
+                    .toLowerCase()
+                    .includes(search)
+
+                ||
+
+                trx.memberNama
+                    .toLowerCase()
+                    .includes(search)
+
+            );
+    }
+
+
+    if (filter === "lunas") {
+
+        data =
+            data.filter(
+                trx =>
+                    trx.pembayaran ===
+                    "Sudah Bayar"
+            );
+
+    }
+
+
+    if (filter === "belum") {
+
+        data =
+            data.filter(
+                trx =>
+                    trx.pembayaran ===
+                    "Belum Bayar"
+            );
+    }
+
+
+    data.sort(
+        (a, b) =>
+            new Date(b.tanggal) -
+            new Date(a.tanggal)
+    );
+
+
+    if (data.length === 0) {
 
         tbody.innerHTML = `
             <tr>
-                <td colspan="6">
+                <td colspan="7">
                     <div class="empty-state">
-                        <div class="empty-icon">📜</div>
-                        Belum ada riwayat transaksi.
+                        📜
+                        <p>Belum ada transaksi</p>
                     </div>
                 </td>
             </tr>
@@ -2401,59 +2454,259 @@ function renderRiwayat() {
     }
 
 
-    const data =
-        [...transaksi].reverse();
+    tbody.innerHTML =
+        data.map(trx => `
+
+            <tr>
+
+                <td>
+                    <strong>
+                        ${escapeHTML(trx.id)}
+                    </strong>
+                </td>
+
+                <td>
+                    ${formatDate(trx.tanggal)}
+                </td>
+
+                <td>
+                    ${escapeHTML(trx.memberNama)}
+                </td>
+
+                <td>
+                    ${trx.jumlahItem}
+                </td>
+
+                <td>
+                    ${rupiah(trx.total)}
+                </td>
+
+                <td>
+                    ${paymentBadge(trx.pembayaran)}
+                </td>
+
+                <td>
+
+                    <div class="action-buttons">
+
+                        <button
+                            class="action-btn action-view"
+                            onclick="openTransactionDetail('${trx.id}')"
+                        >
+                            👁 Detail
+                        </button>
+
+                        ${
+                            trx.pembayaran ===
+                            "Belum Bayar"
+                                ? `
+                                    <button
+                                        class="action-btn action-edit"
+                                        onclick="markAsPaid('${trx.id}')"
+                                    >
+                                        ✅
+                                    </button>
+                                  `
+                                : ""
+                        }
+
+                    </div>
+
+                </td>
+
+            </tr>
+
+        `).join("");
+}
+
+
+/* =====================================================
+   PAYMENT BADGE
+===================================================== */
+
+function paymentBadge(status) {
+
+    if (status === "Sudah Bayar") {
+
+        return `
+            <span class="badge badge-success">
+                ✅ Sudah Bayar
+            </span>
+        `;
+
+    }
+
+    return `
+        <span class="badge badge-danger">
+            ❌ Belum Bayar
+        </span>
+    `;
+}
+
+
+/* =====================================================
+   MARK AS PAID
+===================================================== */
+
+function markAsPaid(id) {
+
+    const trx =
+        transaksi.find(
+            item => item.id === id
+        );
+
+
+    if (!trx) return;
+
+
+    if (
+        trx.pembayaran ===
+        "Sudah Bayar"
+    ) {
+
+        return;
+    }
+
+
+    const confirmPayment =
+        confirm(
+            `Tandai transaksi ${id} sebagai sudah dibayar?`
+        );
+
+
+    if (!confirmPayment) return;
+
+
+    trx.pembayaran =
+        "Sudah Bayar";
+
+
+    trx.uangDibayar =
+        trx.total;
+
+
+    trx.kembalian = 0;
+
+
+    saveData();
+
+    renderRiwayat();
+
+    renderDashboard();
+
+
+    showToast(
+        `Transaksi ${id} sudah ditandai lunas.`,
+        "success"
+    );
+}
+
+
+/* =====================================================
+   MEMBER
+===================================================== */
+
+function renderMember() {
+
+    const tbody =
+        document.getElementById(
+            "memberTable"
+        );
+
+
+    if (!tbody) return;
+
+
+    const search =
+        (
+            document.getElementById(
+                "searchMember"
+            )?.value || ""
+        )
+            .toLowerCase();
+
+
+    const members =
+        akun
+            .filter(
+                item =>
+                    item.nama
+                        .toLowerCase()
+                        .includes(search)
+
+                    ||
+
+                    item.username
+                        .toLowerCase()
+                        .includes(search)
+            );
+
+
+    if (members.length === 0) {
+
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="5">
+                    <div class="empty-state">
+                        👥
+                        <p>Belum ada member</p>
+                    </div>
+                </td>
+            </tr>
+        `;
+
+        return;
+    }
 
 
     tbody.innerHTML =
-        data.map(function (item) {
+        members.map(item => `
 
-            const date =
-                new Date(item.tanggal);
+            <tr>
 
+                <td>
+                    ${escapeHTML(item.id)}
+                </td>
 
-            return `
-                <tr>
+                <td>
+                    <strong>
+                        ${escapeHTML(item.nama)}
+                    </strong>
+                </td>
 
-                    <td>
-                        <strong>
-                            ${item.id}
-                        </strong>
-                    </td>
+                <td>
+                    @${escapeHTML(item.username)}
+                </td>
 
-                    <td>
-                        ${formatDate(date)}
-                    </td>
+                <td>
+                    ${
+                        item.role === "Admin"
+                            ? `
+                                <span class="badge badge-purple">
+                                    Admin
+                                </span>
+                              `
+                            : `
+                                <span class="badge badge-info">
+                                    Member
+                                </span>
+                              `
+                    }
+                </td>
 
-                    <td>
-                        ${escapeHTML(item.memberNama)}
-                    </td>
+                <td>
+                    ${formatDate(item.tanggalDaftar)}
+                </td>
 
-                    <td>
-                        ${item.jumlahItem}
-                    </td>
+            </tr>
 
-                    <td>
-                        <strong>
-                            ${rupiah(item.total)}
-                        </strong>
-                    </td>
-
-                    <td>
-                        ${escapeHTML(item.kasir)}
-                    </td>
-
-                </tr>
-            `;
-
-        }).join("");
-
+        `).join("");
 }
 
 
 /* =====================================================
    AKUN
-   ===================================================== */
+===================================================== */
 
 function renderAkun() {
 
@@ -2466,101 +2719,101 @@ function renderAkun() {
     if (!tbody) return;
 
 
-    if (akun.length === 0) {
-
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="5">
-                    <div class="empty-state">
-                        Belum ada akun.
-                    </div>
-                </td>
-            </tr>
-        `;
-
-        return;
-    }
-
-
     tbody.innerHTML =
-        akun.map(function (item) {
+        akun.map(item => `
 
-            return `
-                <tr>
+            <tr>
 
-                    <td>
-                        ${item.id}
-                    </td>
+                <td>
+                    ${escapeHTML(item.id)}
+                </td>
 
-                    <td>
-                        <strong>
-                            ${escapeHTML(item.nama)}
-                        </strong>
-                    </td>
+                <td>
+                    ${escapeHTML(item.nama)}
+                </td>
 
-                    <td>
-                        ${escapeHTML(item.username)}
-                    </td>
+                <td>
+                    @${escapeHTML(item.username)}
+                </td>
 
-                    <td>
+                <td>
+
+                    <select
+                        onchange="changeRole('${item.id}', this.value)"
+                        ${
+                            item.id === "USR001"
+                                ? "disabled"
+                                : ""
+                        }
+                    >
+
+                        <option
+                            value="Member"
+                            ${
+                                item.role === "Member"
+                                    ? "selected"
+                                    : ""
+                            }
+                        >
+                            Member
+                        </option>
+
+                        <option
+                            value="Admin"
+                            ${
+                                item.role === "Admin"
+                                    ? "selected"
+                                    : ""
+                            }
+                        >
+                            Admin
+                        </option>
+
+                    </select>
+
+                </td>
+
+                <td>
+                    ${formatDate(item.tanggalDaftar)}
+                </td>
+
+                <td>
+
+                    <div class="action-buttons">
 
                         ${
-                            item.role === "Admin"
-
-                            ? `
-                                <span class="badge badge-primary">
-                                    Admin
-                                </span>
-                            `
-
-                            : `
-                                <span class="badge badge-purple">
-                                    Member
-                                </span>
-                            `
-                        }
-
-                    </td>
-
-                    <td>
-
-                        <div class="action-buttons">
-
-                            ${
-                                item.username !== "admin"
-
+                            item.id !== "USR001" &&
+                            item.id !== currentUser.id
                                 ? `
                                     <button
-                                        class="action-button action-delete"
+                                        class="action-btn action-delete"
                                         onclick="deleteAkun('${item.id}')"
-                                        title="Hapus"
                                     >
                                         🗑️
                                     </button>
-                                `
-
+                                  `
                                 : `
-                                    <span style="font-size:12px;color:#64748b;">
-                                        Akun utama
+                                    <span
+                                        class="badge badge-info"
+                                    >
+                                        Aktif
                                     </span>
-                                `
-                            }
+                                  `
+                        }
 
-                        </div>
+                    </div>
 
-                    </td>
+                </td>
 
-                </tr>
-            `;
+            </tr>
 
-        }).join("");
-
+        `).join("");
 }
 
 
 /* =====================================================
-   MODAL AKUN
-   ===================================================== */
+   OPEN AKUN MODAL
+===================================================== */
 
 function openAkunModal() {
 
@@ -2582,15 +2835,17 @@ function openAkunModal() {
 
 
     openModal("akunModal");
-
 }
 
 
 /* =====================================================
    SAVE AKUN
-   ===================================================== */
+===================================================== */
 
-function saveAkun() {
+function saveAkun(event) {
+
+    event.preventDefault();
+
 
     const nama =
         document.getElementById(
@@ -2616,20 +2871,11 @@ function saveAkun() {
         ).value;
 
 
-    if (!nama || !username || !password) {
-
-        showToast(
-            "Semua data wajib diisi."
-        );
-
-        return;
-    }
-
-
     if (password.length < 6) {
 
         showToast(
-            "Password minimal 6 karakter."
+            "Password minimal 6 karakter.",
+            "warning"
         );
 
         return;
@@ -2637,18 +2883,18 @@ function saveAkun() {
 
 
     const exists =
-        akun.some(function (item) {
-
-            return item.username.toLowerCase() ===
-                username.toLowerCase();
-
-        });
+        akun.some(
+            item =>
+                item.username.toLowerCase() ===
+                username.toLowerCase()
+        );
 
 
     if (exists) {
 
         showToast(
-            "Username sudah digunakan."
+            "Username sudah digunakan.",
+            "error"
         );
 
         return;
@@ -2657,54 +2903,163 @@ function saveAkun() {
 
     akun.push({
 
-        id: generateId("USR", akun),
+        id:
+            generateId(
+                akun,
+                "USR"
+            ),
 
-        nama: nama,
+        nama,
 
-        username: username,
+        username,
 
-        password: password,
+        password,
 
-        role: role
+        role,
+
+        tanggalDaftar:
+            new Date().toISOString()
 
     });
 
 
     saveData();
 
-    closeModal("akunModal");
-
     renderAkun();
+
+    renderMember();
+
+    renderSaleOptions();
+
+    renderDashboard();
+
+
+    closeModal("akunModal");
 
 
     showToast(
-        "Akun berhasil ditambahkan."
+        `Akun ${username} berhasil dibuat sebagai ${role}.`,
+        "success"
     );
-
 }
 
 
 /* =====================================================
-   DELETE AKUN
-   ===================================================== */
+   CHANGE ROLE
+===================================================== */
+
+function changeRole(id, newRole) {
+
+    if (!currentUser ||
+        currentUser.role !== "Admin") {
+
+        showToast(
+            "Hanya Admin yang dapat mengubah role.",
+            "error"
+        );
+
+        return;
+    }
+
+
+    if (id === "USR001") {
+
+        showToast(
+            "Admin utama tidak dapat diubah rolenya.",
+            "warning"
+        );
+
+        renderAkun();
+
+        return;
+    }
+
+
+    const account =
+        akun.find(
+            item => item.id === id
+        );
+
+
+    if (!account) return;
+
+
+    if (
+        account.id ===
+        currentUser.id &&
+        newRole !== "Admin"
+    ) {
+
+        showToast(
+            "Anda tidak dapat menurunkan role akun sendiri.",
+            "warning"
+        );
+
+        renderAkun();
+
+        return;
+    }
+
+
+    account.role =
+        newRole;
+
+
+    if (
+        account.id ===
+        currentUser.id
+    ) {
+
+        currentUser.role =
+            newRole;
+
+        localStorage.setItem(
+            "tokotokand_current_user",
+            JSON.stringify(currentUser)
+        );
+
+        updateUserInterface();
+    }
+
+
+    saveData();
+
+    renderAkun();
+
+    renderMember();
+
+    renderSaleOptions();
+
+    renderDashboard();
+
+
+    showToast(
+        `Role ${account.nama} diubah menjadi ${newRole}.`,
+        "success"
+    );
+}
+
+
+/* =====================================================
+   DELETE ACCOUNT
+===================================================== */
 
 function deleteAkun(id) {
 
-    const item =
-        akun.find(function (item) {
-
-            return item.id === id;
-
-        });
+    const account =
+        akun.find(
+            item => item.id === id
+        );
 
 
-    if (!item) return;
+    if (!account) return;
 
 
-    if (item.username === "admin") {
+    if (id === "USR001") {
 
         showToast(
-            "Akun utama tidak dapat dihapus."
+            "Admin utama tidak dapat dihapus.",
+            "warning"
         );
 
         return;
@@ -2713,54 +3068,452 @@ function deleteAkun(id) {
 
     if (
         currentUser &&
-        currentUser.id === item.id
+        id === currentUser.id
     ) {
 
         showToast(
-            "Akun yang sedang digunakan tidak dapat dihapus."
+            "Akun yang sedang digunakan tidak dapat dihapus.",
+            "warning"
         );
 
         return;
     }
 
 
-    if (
-        !confirm(
-            `Hapus akun "${item.username}"?`
-        )
-    ) return;
+    const confirmed =
+        confirm(
+            `Hapus akun "${account.nama}"?`
+        );
+
+
+    if (!confirmed) return;
 
 
     akun =
-        akun.filter(function (item) {
-
-            return item.id !== id;
-
-        });
+        akun.filter(
+            item => item.id !== id
+        );
 
 
     saveData();
 
     renderAkun();
 
+    renderMember();
+
+    renderSaleOptions();
+
+    renderDashboard();
+
 
     showToast(
-        "Akun berhasil dihapus."
+        "Akun berhasil dihapus.",
+        "success"
     );
-
 }
 
 
 /* =====================================================
-   MODAL HELPER
-   ===================================================== */
+   TRANSACTION DETAIL
+===================================================== */
+
+function openTransactionDetail(id) {
+
+    const trx =
+        transaksi.find(
+            item => item.id === id
+        );
+
+
+    if (!trx) return;
+
+
+    currentTransactionId =
+        id;
+
+
+    document.getElementById(
+        "transactionSubtitle"
+    ).textContent =
+        `${trx.id} • ${formatDate(trx.tanggal)}`;
+
+
+    const detail =
+        document.getElementById(
+            "transactionDetail"
+        );
+
+
+    detail.innerHTML = `
+
+        <div class="transaction-info">
+
+            <div class="transaction-info-item">
+
+                <small>ID TRANSAKSI</small>
+
+                <strong>
+                    ${escapeHTML(trx.id)}
+                </strong>
+
+            </div>
+
+
+            <div class="transaction-info-item">
+
+                <small>MEMBER</small>
+
+                <strong>
+                    ${escapeHTML(trx.memberNama)}
+                </strong>
+
+            </div>
+
+
+            <div class="transaction-info-item">
+
+                <small>KASIR</small>
+
+                <strong>
+                    ${escapeHTML(trx.kasir)}
+                </strong>
+
+            </div>
+
+
+            <div class="transaction-info-item">
+
+                <small>STATUS PEMBAYARAN</small>
+
+                <strong>
+                    ${paymentBadge(trx.pembayaran)}
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <table class="detail-table">
+
+            <thead>
+
+                <tr>
+                    <th>Barang</th>
+                    <th>Qty</th>
+                    <th>Harga</th>
+                    <th>Subtotal</th>
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                ${trx.detail.map(item => `
+
+                    <tr>
+
+                        <td>
+                            ${escapeHTML(item.nama)}
+                        </td>
+
+                        <td>
+                            ${item.qty}
+                        </td>
+
+                        <td>
+                            ${rupiah(item.harga)}
+                        </td>
+
+                        <td>
+                            ${rupiah(item.subtotal)}
+                        </td>
+
+                    </tr>
+
+                `).join("")}
+
+            </tbody>
+
+        </table>
+
+
+        <div class="transaction-info">
+
+            <div class="transaction-info-item">
+
+                <small>UANG DIBAYAR</small>
+
+                <strong>
+                    ${rupiah(trx.uangDibayar)}
+                </strong>
+
+            </div>
+
+
+            <div class="transaction-info-item">
+
+                <small>KEMBALIAN</small>
+
+                <strong>
+                    ${rupiah(trx.kembalian)}
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="transaction-total">
+
+            <span>TOTAL</span>
+
+            <strong>
+                ${rupiah(trx.total)}
+            </strong>
+
+        </div>
+
+    `;
+
+
+    openModal("transactionModal");
+}
+
+
+/* =====================================================
+   PRINT TRANSACTION
+===================================================== */
+
+function printTransaction() {
+
+    if (!currentTransactionId)
+        return;
+
+
+    const trx =
+        transaksi.find(
+            item =>
+                item.id ===
+                currentTransactionId
+        );
+
+
+    if (!trx) return;
+
+
+    const printWindow =
+        window.open(
+            "",
+            "_blank",
+            "width=500,height=700"
+        );
+
+
+    const items =
+        trx.detail.map(item => `
+
+            <tr>
+
+                <td>
+                    ${escapeHTML(item.nama)}
+                </td>
+
+                <td>
+                    ${item.qty}
+                </td>
+
+                <td>
+                    ${rupiah(item.harga)}
+                </td>
+
+                <td>
+                    ${rupiah(item.subtotal)}
+                </td>
+
+            </tr>
+
+        `).join("");
+
+
+    printWindow.document.write(`
+
+        <!DOCTYPE html>
+
+        <html>
+
+        <head>
+
+            <title>
+                Struk ${trx.id}
+            </title>
+
+            <style>
+
+                body {
+                    font-family: Arial, sans-serif;
+                    padding: 25px;
+                    max-width: 450px;
+                    margin: auto;
+                }
+
+                h2 {
+                    text-align: center;
+                    margin-bottom: 5px;
+                }
+
+                .center {
+                    text-align: center;
+                }
+
+                hr {
+                    border: none;
+                    border-top: 1px dashed #999;
+                    margin: 15px 0;
+                }
+
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    font-size: 12px;
+                }
+
+                th,
+                td {
+                    padding: 7px 2px;
+                    border-bottom: 1px solid #ddd;
+                    text-align: left;
+                }
+
+                .total {
+                    display: flex;
+                    justify-content: space-between;
+                    font-weight: bold;
+                    margin-top: 15px;
+                }
+
+                .footer {
+                    text-align: center;
+                    margin-top: 25px;
+                    font-size: 12px;
+                }
+
+            </style>
+
+        </head>
+
+        <body>
+
+            <h2>TOKOTOKOAND</h2>
+
+            <div class="center">
+                Sistem Penjualan
+            </div>
+
+            <hr>
+
+            <div>
+                ID: ${escapeHTML(trx.id)}
+            </div>
+
+            <div>
+                Tanggal: ${formatDate(trx.tanggal)}
+            </div>
+
+            <div>
+                Member: ${escapeHTML(trx.memberNama)}
+            </div>
+
+            <div>
+                Kasir: ${escapeHTML(trx.kasir)}
+            </div>
+
+            <hr>
+
+            <table>
+
+                <thead>
+
+                    <tr>
+                        <th>Barang</th>
+                        <th>Qty</th>
+                        <th>Harga</th>
+                        <th>Subtotal</th>
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    ${items}
+
+                </tbody>
+
+            </table>
+
+
+            <div class="total">
+                <span>Total</span>
+                <span>${rupiah(trx.total)}</span>
+            </div>
+
+
+            <div class="total">
+                <span>Pembayaran</span>
+                <span>${escapeHTML(trx.pembayaran)}</span>
+            </div>
+
+
+            <div class="total">
+                <span>Dibayar</span>
+                <span>${rupiah(trx.uangDibayar)}</span>
+            </div>
+
+
+            <div class="total">
+                <span>Kembalian</span>
+                <span>${rupiah(trx.kembalian)}</span>
+            </div>
+
+
+            <div class="footer">
+
+                <hr>
+
+                Terima kasih telah berbelanja
+                di TOKOTOKOAND ❤️
+
+            </div>
+
+
+            <script>
+
+                window.onload = function() {
+                    window.print();
+                };
+
+            <\/script>
+
+        </body>
+
+        </html>
+
+    `);
+
+
+    printWindow.document.close();
+}
+
+
+/* =====================================================
+   MODAL
+===================================================== */
 
 function openModal(id) {
 
     document
         .getElementById(id)
         .classList.add("show");
-
 }
 
 
@@ -2769,75 +3522,36 @@ function closeModal(id) {
     document
         .getElementById(id)
         .classList.remove("show");
-
 }
 
 
 /* =====================================================
    FORMAT DATE
-   ===================================================== */
+===================================================== */
 
 function formatDate(date) {
 
-    return date.toLocaleString(
-        "id-ID",
-        {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit"
-        }
-    );
-
-}
+    if (!date)
+        return "-";
 
 
-/* =====================================================
-   TOAST
-   ===================================================== */
-
-let toastTimeout;
-
-
-function showToast(message) {
-
-    const toast =
-        document.getElementById(
-            "toast"
+    return new Date(date)
+        .toLocaleString(
+            "id-ID",
+            {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit"
+            }
         );
-
-
-    const text =
-        document.getElementById(
-            "toastMessage"
-        );
-
-
-    text.textContent = message;
-
-
-    toast.classList.add("show");
-
-
-    clearTimeout(toastTimeout);
-
-
-    toastTimeout =
-        setTimeout(function () {
-
-            toast.classList.remove(
-                "show"
-            );
-
-        }, 3000);
-
 }
 
 
 /* =====================================================
    ESCAPE HTML
-   ===================================================== */
+===================================================== */
 
 function escapeHTML(value) {
 
@@ -2847,17 +3561,150 @@ function escapeHTML(value) {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
-
 }
 
 
 /* =====================================================
-   CLOSE MODAL WHEN CLICK OUTSIDE
-   ===================================================== */
+   TOAST
+===================================================== */
+
+function showToast(
+    message,
+    type = "success"
+) {
+
+    const container =
+        document.getElementById(
+            "toastContainer"
+        );
+
+
+    const toast =
+        document.createElement(
+            "div"
+        );
+
+
+    toast.className =
+        `toast ${type}`;
+
+
+    toast.textContent =
+        message;
+
+
+    container.appendChild(
+        toast
+    );
+
+
+    setTimeout(() => {
+
+        toast.remove();
+
+    }, 3000);
+}
+
+
+/* =====================================================
+   THEME
+===================================================== */
+
+function loadTheme() {
+
+    const theme =
+        localStorage.getItem(
+            "tokotokand_theme"
+        );
+
+
+    if (theme === "dark") {
+
+        document.body.classList.add(
+            "dark"
+        );
+
+        updateThemeButton();
+
+    } else {
+
+        document.body.classList.remove(
+            "dark"
+        );
+
+        updateThemeButton();
+    }
+}
+
+
+function toggleTheme() {
+
+    document.body.classList.toggle(
+        "dark"
+    );
+
+
+    const isDark =
+        document.body.classList.contains(
+            "dark"
+        );
+
+
+    localStorage.setItem(
+        "tokotokand_theme",
+        isDark
+            ? "dark"
+            : "light"
+    );
+
+
+    updateThemeButton();
+}
+
+
+function updateThemeButton() {
+
+    const button =
+        document.getElementById(
+            "themeButton"
+        );
+
+
+    if (!button) return;
+
+
+    const isDark =
+        document.body.classList.contains(
+            "dark"
+        );
+
+
+    button.textContent =
+        isDark
+            ? "☀️ Mode Terang"
+            : "🌙 Mode Gelap";
+}
+
+
+/* =====================================================
+   SIDEBAR MOBILE
+===================================================== */
+
+function toggleSidebar() {
+
+    document
+        .querySelector(".sidebar")
+        .classList.toggle("open");
+}
+
+
+/* =====================================================
+   CLICK OUTSIDE MODAL
+===================================================== */
 
 document.addEventListener(
     "click",
-    function (event) {
+    function(event) {
 
         if (
             event.target.classList.contains(
@@ -2868,7 +3715,6 @@ document.addEventListener(
             event.target.classList.remove(
                 "show"
             );
-
         }
 
     }
